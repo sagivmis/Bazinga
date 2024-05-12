@@ -1,0 +1,40 @@
+#root {
+  margin: 0 auto;
+  text-align: center;
+}
+.bali-bot-app {
+  background-color: var(--background);
+  padding: 1em;
+  width: calc(100vw - 2em);
+  height: calc(100vh - 2em);
+  color: var(--normal);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.top-container {
+  block-size: 49%;
+  inline-size: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+.bottom-container {
+  block-size: 49%;
+  inline-size: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+.trades-container {
+  block-size: 100%;
+  inline-size: 75%;
+  /* width: 10%;
+  height: 10%; */
+  border: 1px solid var(--normal);
+  display: flex;
+  flex-direction: column;
+}

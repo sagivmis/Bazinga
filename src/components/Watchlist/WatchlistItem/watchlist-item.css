@@ -1,0 +1,6 @@
+.watchlist-item-container {
+  inline-size: 80%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}

@@ -1,0 +1,26 @@
+.watchlist {
+  block-size: 100%;
+  inline-size: 25%;
+  /* width: 10%;
+  height: 10%; */
+  border: 1px solid var(--normal);
+  display: flex;
+  flex-direction: column;
+}
+.stats-container {
+  block-size: 100%;
+  inline-size: 74%;
+  /* width: 10%;
+  height: 10%; */
+  border: 1px solid var(--normal);
+  display: flex;
+  flex-direction: column;
+}
+
+.watchlist-items {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.5em;
+}

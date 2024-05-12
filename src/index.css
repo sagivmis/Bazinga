@@ -1,0 +1,18 @@
+:root {
+  font-family: Inter, sans-serif;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 100vw;
+  min-height: 100vh;
+
+  --detail: #7caee1;
+  --normal: #9ec0f8;
+  --primary: #18416b;
+  --light-green: #acbca4;
+  --light-red: #d4a4ac;
+  --background: #272c3c;
+}
