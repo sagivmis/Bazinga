@@ -47,3 +47,7 @@ export type WatchlistItemType = {
   bid?: number
   ask?: number
 }
+
+export type Price = { bid: number; ask: number }
+export type PriceFloat = number
+export type Prices = Record<string, PriceFloat>

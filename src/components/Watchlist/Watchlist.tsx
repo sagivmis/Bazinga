@@ -6,12 +6,14 @@ import { SingleValue } from "react-select"
 import { useBinanceContext } from "../../providers/BinanceProvider"
 import { Contract, WatchlistItemType } from "../../types"
 import WatchlistItem from "./WatchlistItem"
+import { useGeneralContext } from "../../providers/GeneralProvider"
 
 const Watchlist = () => {
   const { getAllContracts } = useBinanceContext()
+  const { handleAddNewWatchlistItems, handleAddTempWatchlist, watchlist } =
+    useGeneralContext()
+
   const [data, setData] = useState<{ value: string; label: string }[]>([])
-  const [watchlist, setWatchlist] = useState<WatchlistItemType[]>([])
-  const [tempWatchlist, setTempWatchlist] = useState<WatchlistItemType[]>([])
 
   const handleFetchContractsOptions = useCallback(async () => {
     const contracts = await getAllContracts()
@@ -26,27 +28,6 @@ const Watchlist = () => {
     handleFetchContractsOptions()
   }, [handleFetchContractsOptions])
 
-  const fetchOptions = async (inputValue: string) => {
-    const response = data.filter((i) =>
-      i.label.toLowerCase().includes(inputValue.toLowerCase())
-    )
-
-    return response
-  }
-
-  const handleAddNewWatchlistItems = () => {
-    const contracts = watchlist.map((item) => item.symbol)
-    const additionContracts = tempWatchlist.filter((item) => {
-      if (!contracts.includes(item.symbol)) {
-        return true
-      }
-    })
-    setWatchlist((prevWatchlist) => [...prevWatchlist, ...additionContracts])
-  }
-
-  // SET CONNECTION THROUGH WS AND THEN GET THE PRICES OF THE ADDED CONTRACTS
-  // AND SHOW THEM (DO NOT GET ALL THE PRICES FOR ALL THE CONTRACTS SINCE THERES A
-  // LIMIT OF 200 CONNECTIONS)
   return (
     <div className='watchlist'>
       <Select
@@ -54,15 +35,7 @@ const Watchlist = () => {
         options={data}
         defaultValue={null}
         isMulti
-        onChange={(values) => {
-          if (Array.isArray(values)) {
-            setTempWatchlist(
-              values.map((value) => {
-                return { symbol: value.value }
-              })
-            )
-          }
-        }}
+        onChange={handleAddTempWatchlist}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             handleAddNewWatchlistItems()
