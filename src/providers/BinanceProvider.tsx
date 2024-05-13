@@ -3,10 +3,11 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState
 } from "react"
-import { ProviderProps } from "../types"
+import { Prices, ProviderProps } from "../types"
 import {
   BasicSymbolParam,
   CancelAllOpenOrdersResult,
@@ -27,14 +28,17 @@ import {
   USDMClient,
   WebsocketClient
 } from "binance"
+import moment from "moment"
+import { useGeneralContext } from "./GeneralProvider"
 
 const api_key =
-  "876a0aa7f6e9c11b363a666902b0668407ee313f52396c22d85800b2c8b4f3f6"
+  "vH4KZgTcdVqfR0DgB0gs2EMU6hglHTL1ncj1g4ftdWaBndaQrEvyYrUHwEmWXHQu"
 const secret_key =
-  "9473252093d4895607c2fde6a3efe81b81d966c3597c5ca61caf9d3288f271f1"
+  "Cu3IiKS8uaOBTTPFfx7KbLBLm0rwG6gGBV6MxQ0qIdJoHTD5m9fDV6lx1nwAyOnG"
 
 interface IBinanceContext {
   client: USDMClient
+  markPrices: Prices
   setLeverage: (leverage: number, symbol: string) => Promise<SetLeverageResult>
   getPositions: () => Promise<FuturesPosition[]>
   getPosition: (symbol: string) => Promise<FuturesPosition[]>
@@ -63,6 +67,7 @@ interface IBinanceContext {
 }
 const defaultBinanceContext: IBinanceContext = {
   client: new USDMClient(),
+  markPrices: {},
   setLeverage: async () => {
     return { leverage: 0, maxNotionalValue: 0, symbol: "" }
   },
@@ -107,15 +112,72 @@ const defaultBinanceContext: IBinanceContext = {
 
 const BinanceContext = createContext<IBinanceContext>(defaultBinanceContext)
 
+const live_websocket_url = "wss://fstream.binance.com"
+
 export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
-  const [prices, setPrices] = useState([])
+  const { watchlist } = useGeneralContext()
+  const [prices, setPrices] = useState<Prices>({})
+  const [websocket_url] = useState("wss://stream.binancefuture.com/ws")
 
   const ws = useMemo(
-    () => new WebsocketClient({ api_key, api_secret: secret_key }),
-    []
+    () =>
+      new WebsocketClient({
+        wsUrl: websocket_url,
+        api_key,
+        api_secret: secret_key,
+        beautify: true
+      }),
+    [websocket_url]
   )
 
-  // ws.
+  useEffect(() => {
+    // ws.subscribeAllMarketMarkPrice("usdm")
+    // ws.subscribeUsdFuturesUserDataStream(true)
+    watchlist.forEach((pair) => {
+      ws.subscribeMarkPrice(pair.symbol, "usdm")
+
+      // ws.subscribeSymbolBookTicker(pair.symbol, "usdm")
+    })
+  }, [watchlist, ws])
+
+  useEffect(() => {
+    ws.on("open", (data) => {
+      console.log(
+        `Connection to WebsocketClient initiated @${moment(new Date()).format(
+          "D MMM, YYYY"
+        )}`
+      )
+    })
+
+    ws.on("reconnecting", (data) => {
+      console.log(`Reconnecting to ${data.wsKey} `)
+    })
+
+    ws.on("reconnected", (data) => {
+      console.log(`Reconnected to ${data.wsKey}`)
+    })
+
+    ws.on("formattedMessage", (data) => {
+      console.log("formattedMessage: ", data)
+      // data.event.
+
+      //@ts-expect-error FIX PACKAGE TYPE
+      if (data.eventType == "markPriceUpdate") {
+        setPrices((prevPrices) => {
+          //@ts-expect-error FIX PACKAGE TYPE
+          return { ...prevPrices, [data.symbol]: data.markPrice }
+        })
+      }
+    })
+
+    ws.on("reply", (data) => {
+      console.log("log reply: ", JSON.stringify(data, null, 2))
+    })
+
+    ws.on("error", (data) => {
+      console.log("ws saw error ", data?.wsKey)
+    })
+  }, [ws])
 
   const client = useMemo(
     () =>
@@ -246,7 +308,7 @@ export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
     return res
   }, [getMarkPrice])
 
-  const providerMemo: IBinanceContext = useMemo(
+  const providerMemo = useMemo<IBinanceContext>(
     () => ({
       client,
       getAllContracts,
@@ -263,7 +325,8 @@ export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
       getPrice,
       setLeverage,
       submitMultipleOrders,
-      ping
+      ping,
+      markPrices: prices
     }),
     [
       cancelAllOrdersFor,
@@ -281,7 +344,8 @@ export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
       getServerTime,
       ping,
       setLeverage,
-      submitMultipleOrders
+      submitMultipleOrders,
+      prices
     ]
   )
 
