@@ -1,4 +1,4 @@
-import React, { useMemo } from "react"
+import { useMemo } from "react"
 import "./watchlist-item.css"
 import { WatchlistItemType } from "../../../types"
 import { useBinanceContext } from "../../../providers/BinanceProvider"
