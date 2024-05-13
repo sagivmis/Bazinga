@@ -1,10 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react"
-import AsyncSelect from "react-select/async"
 import Select from "react-select"
 import "./watchlist.css"
-import { SingleValue } from "react-select"
 import { useBinanceContext } from "../../providers/BinanceProvider"
-import { Contract, WatchlistItemType } from "../../types"
 import WatchlistItem from "./WatchlistItem"
 import { useGeneralContext } from "../../providers/GeneralProvider"
 

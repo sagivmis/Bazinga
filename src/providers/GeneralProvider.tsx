@@ -38,7 +38,6 @@ const GeneralContext = createContext<IGeneralContext>(defaultGeneralContext)
 export const GeneralProvider: React.FC<ProviderProps> = ({ children }) => {
   const [watchlist, setWatchlist] = useState<WatchlistItemType[]>([])
   const [tempWatchlist, setTempWatchlist] = useState<WatchlistItemType[]>([])
-  const [addedContract, setAddedContracts] = useState<WatchlistItemType[]>([])
 
   const handleAddNewWatchlistItems = useCallback(() => {
     const contracts = watchlist.map((item) => item.symbol)
@@ -48,14 +47,9 @@ export const GeneralProvider: React.FC<ProviderProps> = ({ children }) => {
       }
     })
     setWatchlist((prevWatchlist) => [...prevWatchlist, ...additionContracts])
-    setAddedContracts(additionContracts)
+    setTempWatchlist([])
   }, [tempWatchlist, watchlist])
 
-  const getAndRefreshAddedContracts = () => {
-    const added = addedContract
-    setAddedContracts([])
-    return added
-  }
   const handleAddTempWatchlist = (
     values: MultiValue<{
       value: string
@@ -90,5 +84,4 @@ export const GeneralProvider: React.FC<ProviderProps> = ({ children }) => {
 }
 
 export const useGeneralContext = () => useContext(GeneralContext)
-
 export default GeneralProvider

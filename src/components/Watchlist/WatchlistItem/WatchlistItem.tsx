@@ -1,8 +1,6 @@
 import React, { useMemo } from "react"
 import "./watchlist-item.css"
 import { WatchlistItemType } from "../../../types"
-import { Unstable_Popup as Popup } from "@mui/base/Unstable_Popup"
-import { Popper, Tooltip } from "@mui/material"
 import { useBinanceContext } from "../../../providers/BinanceProvider"
 import { getDecimal } from "../../../util"
 
@@ -21,9 +19,7 @@ const WatchlistItem = (props: IWatchlistItem) => {
 
   return (
     <div className='watchlist-item-container'>
-      <Tooltip title='Symbol'>
-        <span className='symbol'>{item.symbol}</span>
-      </Tooltip>
+      <span className='symbol'>{item.symbol}</span>
       <span className='symbol'>
         {(symbolPrice && symbolPrice.toFixed(symbolDecimal)) || "N/A"}
       </span>

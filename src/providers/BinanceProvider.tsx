@@ -12,8 +12,6 @@ import {
   BasicSymbolParam,
   CancelAllOpenOrdersResult,
   CancelFuturesOrderResult,
-  CancelOrderParams,
-  CancelOrdersTimeoutParams,
   FuturesOrderBook,
   FuturesPosition,
   FuturesSymbolOrderBookTicker,
@@ -30,6 +28,7 @@ import {
 } from "binance"
 import moment from "moment"
 import { useGeneralContext } from "./GeneralProvider"
+import { test_websocket_url } from "../util"
 
 const api_key =
   "vH4KZgTcdVqfR0DgB0gs2EMU6hglHTL1ncj1g4ftdWaBndaQrEvyYrUHwEmWXHQu"
@@ -112,12 +111,10 @@ const defaultBinanceContext: IBinanceContext = {
 
 const BinanceContext = createContext<IBinanceContext>(defaultBinanceContext)
 
-const live_websocket_url = "wss://fstream.binance.com"
-
 export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
   const { watchlist } = useGeneralContext()
   const [prices, setPrices] = useState<Prices>({})
-  const [websocket_url] = useState("wss://stream.binancefuture.com/ws")
+  const [websocket_url] = useState(test_websocket_url)
 
   const ws = useMemo(
     () =>
@@ -141,10 +138,10 @@ export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
   }, [watchlist, ws])
 
   useEffect(() => {
-    ws.on("open", (data) => {
+    ws.on("open", () => {
       console.log(
         `Connection to WebsocketClient initiated @${moment(new Date()).format(
-          "D MMM, YYYY"
+          "D MMM, YYYY, h:mm:ss a"
         )}`
       )
     })
