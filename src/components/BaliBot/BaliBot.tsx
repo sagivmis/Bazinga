@@ -7,15 +7,13 @@ function BaliBot() {
   return (
     <div className='bali-bot-app'>
       <div className='top-container'>
-        {/* get all contracts and show in the list */}
         <Watchlist />
         <div className='stats-container'></div>
       </div>
       <div className='bottom-container'>
-        {/* get all contracts and show in the list */}
         <div className='trades-container'></div>
+        <div className='user-control-container'></div>
       </div>
-      {/* <div className="" */}
     </div>
   )
 }

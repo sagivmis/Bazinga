@@ -11,23 +11,38 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  gap: 2%;
 }
 
 .top-container {
-  block-size: 49%;
+  block-size: 50%;
   inline-size: 100%;
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+  gap: 1%;
 }
+
+.stats-container {
+  block-size: 100%;
+  inline-size: 75%;
+  /* margin-inline-start: 0.5%; */
+  /* width: 10%;
+  height: 10%; */
+  border: 1px solid var(--normal);
+  display: flex;
+  flex-direction: column;
+}
+
 .bottom-container {
-  block-size: 49%;
+  block-size: 50%;
   inline-size: 100%;
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+  gap: 1%;
 }
 .trades-container {
   block-size: 100%;
@@ -38,3 +53,12 @@
   display: flex;
   flex-direction: column;
 }
+
+.user-control-container {
+  block-size: 100%;
+  inline-size: 25%;
+  /* width: 10%;
+  height: 10%; */
+  border: 1px solid var(--normal);
+  display: flex;
+  flex-direction: column;
