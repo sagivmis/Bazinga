@@ -1,0 +1,24 @@
+.position-row {
+  display: flex;
+  flex-direction: row;
+  inline-size: 100%;
+  /* block-size: 2em; */
+  padding-block: 0.5em;
+  justify-content: space-between;
+  align-items: center;
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
+  /* content: "ss"; */
+}
+
+.position-row:hover {
+  background-color: var(--primary);
+  transition: all 0.175s ease-in;
+}
+
+.position-column {
+  inline-size: calc(100% / 8);
+  text-align: center;
+  /* flex: 1; */
+}
