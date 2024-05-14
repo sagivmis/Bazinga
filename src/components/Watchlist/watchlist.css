@@ -3,9 +3,10 @@
   inline-size: 25%;
   /* width: 10%;
   height: 10%; */
-  border: 1px solid var(--normal);
+  border: 1px solid var(--divider);
   display: flex;
   flex-direction: column;
+  border-radius: 5px;
 }
 
 .watchlist-items {

@@ -1,6 +1,6 @@
 #root {
   margin: 0 auto;
-  text-align: center;
+  /* text-align: center; */
 }
 .bali-bot-app {
   background-color: var(--background);
@@ -23,18 +23,6 @@
   justify-content: space-between;
   gap: 1%;
 }
-
-.stats-container {
-  block-size: 100%;
-  inline-size: 75%;
-  /* margin-inline-start: 0.5%; */
-  /* width: 10%;
-  height: 10%; */
-  border: 1px solid var(--normal);
-  display: flex;
-  flex-direction: column;
-}
-
 .bottom-container {
   block-size: 50%;
   inline-size: 100%;
@@ -44,21 +32,3 @@
   justify-content: space-between;
   gap: 1%;
 }
-.trades-container {
-  block-size: 100%;
-  inline-size: 75%;
-  /* width: 10%;
-  height: 10%; */
-  border: 1px solid var(--normal);
-  display: flex;
-  flex-direction: column;
-}
-
-.user-control-container {
-  block-size: 100%;
-  inline-size: 25%;
-  /* width: 10%;
-  height: 10%; */
-  border: 1px solid var(--normal);
-  display: flex;
-  flex-direction: column;

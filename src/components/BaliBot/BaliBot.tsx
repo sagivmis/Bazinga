@@ -1,18 +1,19 @@
-import { useCallback, useEffect, useState } from "react"
-import { useBinanceContext } from "../../providers/BinanceProvider"
 import Watchlist from "../Watchlist"
 import "./bali-bot.css"
+import Statistics from "../Statistics"
+import ControlPanel from "../ControlPanel"
+import Positions from "../Positions"
 
 function BaliBot() {
   return (
     <div className='bali-bot-app'>
       <div className='top-container'>
         <Watchlist />
-        <div className='stats-container'></div>
+        <Statistics />
       </div>
       <div className='bottom-container'>
-        <div className='trades-container'></div>
-        <div className='user-control-container'></div>
+        <Positions />
+        <ControlPanel />
       </div>
     </div>
   )
