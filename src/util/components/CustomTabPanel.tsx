@@ -1,4 +1,3 @@
-import { Box, Typography } from "@mui/material"
 import clsx from "clsx"
 import "./custom-tab-panel.css"
 

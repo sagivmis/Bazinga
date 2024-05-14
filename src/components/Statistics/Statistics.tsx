@@ -1,6 +1,6 @@
-import { Box, Tab, Tabs, Typography } from "@mui/material"
+import { Tab, Tabs, Typography } from "@mui/material"
 import "./statistics.css"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import {
   CustomTabPanel,
   formatNISAsNumber,
@@ -8,7 +8,6 @@ import {
 } from "../../util"
 import clsx from "clsx"
 import { useBinanceContext } from "../../providers/BinanceProvider"
-import { numberInString } from "binance"
 
 function a11yProps(index: number) {
   return {
@@ -25,7 +24,7 @@ const Statistics = () => {
   } = useBinanceContext()
   const [selectedTabIndex, setSelectedTabIndex] = useState(0)
 
-  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleChange = (_: React.SyntheticEvent, newValue: number) => {
     setSelectedTabIndex(newValue)
   }
 

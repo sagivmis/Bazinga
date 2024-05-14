@@ -14,7 +14,7 @@ const ControlPanel = () => {
   )
 
   const handleControls = (
-    event: React.MouseEvent<HTMLElement>,
+    _: React.MouseEvent<HTMLElement>,
     newToggles: string[]
   ) => {
     console.log(newToggles)

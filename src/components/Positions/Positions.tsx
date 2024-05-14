@@ -1,7 +1,5 @@
-import React from "react"
 import "./positions.css"
 import { useBinanceContext } from "../../providers/BinanceProvider"
-import { formatNISAsNumber } from "../../util"
 import Position from "./Position/Position"
 import { FuturesPosition } from "binance"
 

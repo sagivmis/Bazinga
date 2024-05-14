@@ -1,5 +1,5 @@
 import { FuturesPosition } from "binance"
-import React, { useMemo } from "react"
+import { useMemo } from "react"
 import {
   formatNISAsNumber,
   formatPnl,

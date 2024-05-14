@@ -40,7 +40,7 @@ const secret_key =
   "kyQBGvrDpluL5CbfwxsgPiSpet7ffgxYotVPUr2eCLl6Qdc3cMzvNDNSIfzaBF8v"
 
 interface IBinanceContext {
-  client: USDMClient
+  usdmClient: USDMClient
   openPositions: FuturesPosition[]
   isLiveFeed: boolean
   setIsLiveFeed: Dispatch<SetStateAction<boolean>>
@@ -75,7 +75,7 @@ interface IBinanceContext {
   futuresUsdtBalance: numberInString
 }
 const defaultBinanceContext: IBinanceContext = {
-  client: new USDMClient(),
+  usdmClient: new USDMClient(),
   openPositions: [],
   isLiveFeed: true,
   setIsLiveFeed: () => true,
@@ -139,7 +139,7 @@ export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
   const [websocket_url] = useState(live_websocket_url)
   const [openPositions, setOpenPositions] = useState<FuturesPosition[]>([])
   //#region CLIENTS
-  const client = useMemo(
+  const usdmClient = useMemo(
     () =>
       new USDMClient({
         // baseUrl: testnet_url,
@@ -163,52 +163,55 @@ export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
 
   //#region METHODS
   const ping = useCallback(async () => {
-    const response = await client.testConnectivity()
+    const response = await usdmClient.testConnectivity()
     return response
-  }, [client])
+  }, [usdmClient])
   const getBalances = useCallback(async () => {
-    const response = await client.getBalance()
+    const response = await usdmClient.getBalance()
     return response
-  }, [client])
+  }, [usdmClient])
 
   const setLeverage = useCallback(
     async (leverage: number, symbol: string) => {
-      const response = await client.setLeverage({ leverage: leverage, symbol })
+      const response = await usdmClient.setLeverage({
+        leverage: leverage,
+        symbol
+      })
       return response
     },
-    [client]
+    [usdmClient]
   )
 
   const getPositions = useCallback(
     async (params?: Partial<BasicSymbolParam>) => {
-      const response = await client.getPositions(params)
+      const response = await usdmClient.getPositions(params)
       return response
     },
-    [client]
+    [usdmClient]
   )
 
   const getPosition = useCallback(
     async (symbol: string) => {
-      const response = await client.getPositions({ symbol })
+      const response = await usdmClient.getPositions({ symbol })
       return response
     },
-    [client]
+    [usdmClient]
   )
 
   const cancelAllOrdersFor = useCallback(
     async (symbol: string) => {
-      const response = await client.cancelAllOpenOrders({ symbol })
+      const response = await usdmClient.cancelAllOpenOrders({ symbol })
       return response
     },
-    [client]
+    [usdmClient]
   )
 
   const cancelOrder = useCallback(
     async (symbol: string, orderId?: number) => {
-      const response = await client.cancelOrder({ symbol, orderId })
+      const response = await usdmClient.cancelOrder({ symbol, orderId })
       return response
     },
-    [client]
+    [usdmClient]
   )
 
   /**
@@ -216,10 +219,10 @@ export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
    */
   const createOrder = useCallback(
     async (params: NewFuturesOrderParams<number>) => {
-      const response = await client.submitNewOrder(params)
+      const response = await usdmClient.submitNewOrder(params)
       return response
     },
-    [client]
+    [usdmClient]
   )
 
   /**
@@ -229,51 +232,51 @@ export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
    */
   const submitMultipleOrders = useCallback(
     async (params: NewFuturesOrderParams<string>[]) => {
-      const response = await client.submitMultipleOrders(params)
+      const response = await usdmClient.submitMultipleOrders(params)
       return response
     },
-    [client]
+    [usdmClient]
   )
 
   const getPrice = useCallback(
     async (params?: Partial<BasicSymbolParam>) => {
-      const response = await client.getSymbolOrderBookTicker(params)
+      const response = await usdmClient.getSymbolOrderBookTicker(params)
 
       return response
     },
-    [client]
+    [usdmClient]
   )
 
   const getKlines = useCallback(
     async (params: KlinesParams) => {
-      const response = await client.getKlines(params)
+      const response = await usdmClient.getKlines(params)
 
       return response
     },
-    [client]
+    [usdmClient]
   )
   const getMarkPrice = useCallback(
     async (params?: Partial<BasicSymbolParam>) => {
-      const response = await client.getMarkPrice(params)
+      const response = await usdmClient.getMarkPrice(params)
 
       return response
     },
-    [client]
+    [usdmClient]
   )
   const getOrderBook = useCallback(
     async (params: OrderBookParams) => {
-      const response = await client.getOrderBook({ limit: 1000, ...params })
+      const response = await usdmClient.getOrderBook({ limit: 1000, ...params })
 
       return response
     },
-    [client]
+    [usdmClient]
   )
 
   const getServerTime = useCallback(async () => {
-    const response = await client.getServerTime()
+    const response = await usdmClient.getServerTime()
 
     return response
-  }, [client])
+  }, [usdmClient])
 
   const getAllContracts = useCallback(async () => {
     const response = (await getMarkPrice()) as MarkPrice[]
@@ -335,22 +338,22 @@ export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
   }, [getBalances])
 
   const handleFetchPnl = useCallback(async () => {
-    const res = await client.getPositions()
+    const res = await usdmClient.getPositions()
     const newPnl = res.reduce(
       (acc, val) => acc + parseFloat(val.unRealizedProfit.toString()),
       0
     )
     console.log(newPnl)
     setPnl(newPnl)
-  }, [client])
+  }, [usdmClient])
 
   const handleFetchOpenPositions = useCallback(async () => {
-    const res = await client.getPositions()
+    const res = await usdmClient.getPositions()
     const positions = res.filter(
       (pos) => formatNISAsNumber(pos.positionAmt) !== 0
     )
     setOpenPositions(positions)
-  }, [client])
+  }, [usdmClient])
 
   useEffect(() => {
     handleFetchBalance()
@@ -381,7 +384,7 @@ export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
       openPositions,
       pnl,
       futuresUsdtBalance,
-      client,
+      usdmClient,
       getAllContracts,
       getServerTime,
       getBalances,
@@ -405,7 +408,7 @@ export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
       openPositions,
       pnl,
       futuresUsdtBalance,
-      client,
+      usdmClient,
       getAllContracts,
       getServerTime,
       getBalances,
