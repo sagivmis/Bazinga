@@ -1,0 +1,30 @@
+.user-control-container {
+  block-size: 100%;
+  inline-size: 25%;
+  /* width: 10%;
+    height: 10%; */
+  border: 1px solid var(--divider);
+  display: flex;
+  flex-direction: column;
+  border-radius: 5px;
+  justify-content: center;
+  align-items: center;
+}
+
+button.toggle-btn.selected {
+  background-color: var(--normal);
+}
+
+button.toggle-btn.selected:hover {
+  background-color: var(--detail);
+  transition: all 0.2s ease-in;
+}
+
+svg.icon {
+  fill: white;
+}
+
+div.control-panel {
+  display: flex;
+  flex-direction: row;
+}
