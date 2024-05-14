@@ -16,6 +16,7 @@ interface IGeneralContext {
   setWatchlist: Dispatch<SetStateAction<WatchlistItemType[]>>
   setTempWatchlist: Dispatch<SetStateAction<WatchlistItemType[]>>
   handleAddNewWatchlistItems: () => void
+  handleAddNewWatchlistItem: (symbol: string) => void
   handleAddTempWatchlist: (
     values: MultiValue<{
       value: string
@@ -26,6 +27,7 @@ interface IGeneralContext {
 
 const defaultGeneralContext: IGeneralContext = {
   handleAddNewWatchlistItems: () => {},
+  handleAddNewWatchlistItem: () => {},
   handleAddTempWatchlist: () => {},
   setTempWatchlist: () => [],
   setWatchlist: () => [],
@@ -65,8 +67,19 @@ export const GeneralProvider: React.FC<ProviderProps> = ({ children }) => {
     }
   }
 
+  const handleAddNewWatchlistItem = useCallback(
+    (symbol: string) => {
+      const contracts = watchlist.map((item) => item.symbol)
+      if (contracts.includes(symbol)) return
+
+      setWatchlist((prevWatchlist) => [...prevWatchlist, { symbol }])
+    },
+    [watchlist]
+  )
+
   const providerMemo = useMemo<IGeneralContext>(() => {
     return {
+      handleAddNewWatchlistItem,
       handleAddNewWatchlistItems,
       handleAddTempWatchlist,
       setTempWatchlist,
@@ -74,7 +87,12 @@ export const GeneralProvider: React.FC<ProviderProps> = ({ children }) => {
       tempWatchlist,
       watchlist
     }
-  }, [handleAddNewWatchlistItems, tempWatchlist, watchlist])
+  }, [
+    handleAddNewWatchlistItem,
+    handleAddNewWatchlistItems,
+    tempWatchlist,
+    watchlist
+  ])
 
   return (
     <GeneralContext.Provider value={providerMemo}>
