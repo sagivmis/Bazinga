@@ -20,6 +20,7 @@ import {
   FuturesSymbolOrderBookTicker,
   Kline,
   KlinesParams,
+  MainClient,
   MarkPrice,
   NewFuturesOrderParams,
   NewOrderError,
@@ -40,6 +41,7 @@ const secret_key =
   "kyQBGvrDpluL5CbfwxsgPiSpet7ffgxYotVPUr2eCLl6Qdc3cMzvNDNSIfzaBF8v"
 
 interface IBinanceContext {
+  mainClient: MainClient
   usdmClient: USDMClient
   openPositions: FuturesPosition[]
   isLiveFeed: boolean
@@ -75,6 +77,7 @@ interface IBinanceContext {
   futuresUsdtBalance: numberInString
 }
 const defaultBinanceContext: IBinanceContext = {
+  mainClient: new MainClient(),
   usdmClient: new USDMClient(),
   openPositions: [],
   isLiveFeed: true,
@@ -139,11 +142,16 @@ export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
   const [websocket_url] = useState(live_websocket_url)
   const [openPositions, setOpenPositions] = useState<FuturesPosition[]>([])
   //#region CLIENTS
+
+  const mainClient = useMemo(
+    () => new MainClient({ api_key, api_secret: secret_key }),
+    []
+  )
   const usdmClient = useMemo(
     () =>
       new USDMClient({
         // baseUrl: testnet_url,
-        api_key: api_key,
+        api_key,
         api_secret: secret_key
       }),
     []
@@ -381,6 +389,7 @@ export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
 
   const providerMemo = useMemo<IBinanceContext>(
     () => ({
+      mainClient,
       openPositions,
       pnl,
       futuresUsdtBalance,
@@ -405,6 +414,7 @@ export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
       markPrices: prices
     }),
     [
+      mainClient,
       openPositions,
       pnl,
       futuresUsdtBalance,
