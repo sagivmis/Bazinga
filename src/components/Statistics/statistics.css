@@ -1,0 +1,43 @@
+.stats-container {
+  block-size: 100%;
+  inline-size: 75%;
+  position: relative;
+  /* margin-inline-start: 0.5%; */
+  /* width: 10%;
+    height: 10%; */
+  border: 1px solid var(--divider);
+  display: flex;
+  flex-direction: row;
+  border-radius: 5px;
+}
+div.statistics {
+  inline-size: 10%;
+  /* block-size: 10em; */
+  border-right: 1px solid var(--divider);
+
+  /* border-color: ; */
+}
+button.tab-btn.selected {
+  color: var(--normal);
+  transition: all 0.2s ease-in;
+}
+
+.user-statistics-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 1%;
+}
+
+.assets-statistics,
+.trades-statistics {
+  inline-size: 50%;
+  display: flex;
+  flex-direction: column;
+  /* align-items: flex-end; */
+}
+
+h6.stat-row {
+  display: flex;
+  justify-content: space-between;
+}
