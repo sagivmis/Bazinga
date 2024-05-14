@@ -1,0 +1,8 @@
+.tab-panel {
+  --padding-inline: 2%;
+  --padding-block: 1%;
+  inline-size: calc(100% - calc(2 * var(--padding-inline)));
+  block-size: calc(100% - calc(2 * var(--padding-block)));
+  padding-inline: var(--padding-inline);
+  padding-block: var(--padding-block);
+}
