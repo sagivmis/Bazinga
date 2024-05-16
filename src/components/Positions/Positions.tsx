@@ -1,5 +1,5 @@
 import "./positions.css"
-import { useBinanceContext } from "../../providers/BinanceProvider"
+import { useBinance } from "../../providers/BinanceProvider"
 import Position from "./Position/Position"
 import { FuturesPosition } from "binance"
 
@@ -22,7 +22,7 @@ const defaultPosition: FuturesPosition = {
 }
 
 const Positions = () => {
-  const { openPositions } = useBinanceContext()
+  const { openPositions } = useBinance()
 
   return (
     <div className='positions-container'>

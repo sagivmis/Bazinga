@@ -7,7 +7,7 @@ import {
   formatNISAsString
 } from "../../util"
 import clsx from "clsx"
-import { useBinanceContext } from "../../providers/BinanceProvider"
+import { useBinance } from "../../providers/BinanceProvider"
 
 function a11yProps(index: number) {
   return {
@@ -17,11 +17,7 @@ function a11yProps(index: number) {
 }
 
 const Statistics = () => {
-  const {
-    futuresUsdtBalance: balance,
-    pnl,
-    openPositions
-  } = useBinanceContext()
+  const { futuresUsdtBalance: balance, pnl, openPositions } = useBinance()
   const [selectedTabIndex, setSelectedTabIndex] = useState(0)
 
   const handleChange = (_: React.SyntheticEvent, newValue: number) => {

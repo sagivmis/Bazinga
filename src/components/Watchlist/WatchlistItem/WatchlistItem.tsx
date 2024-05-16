@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 import "./watchlist-item.css"
 import { WatchlistItemType } from "../../../types"
-import { useBinanceContext } from "../../../providers/BinanceProvider"
+import { useBinance } from "../../../providers/BinanceProvider"
 import { getDecimal } from "../../../util"
 
 interface IWatchlistItem {
@@ -9,7 +9,7 @@ interface IWatchlistItem {
 }
 const WatchlistItem = (props: IWatchlistItem) => {
   const { item } = props
-  const { markPrices } = useBinanceContext()
+  const { markPrices } = useBinance()
   const symbolPrice = markPrices[item.symbol]
 
   const symbolDecimal = useMemo(() => {

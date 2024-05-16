@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react"
 import Select from "react-select"
 import "./watchlist.css"
-import { useBinanceContext } from "../../providers/BinanceProvider"
+import { useBinance } from "../../providers/BinanceProvider"
 import WatchlistItem from "./WatchlistItem"
 import { useGeneralContext } from "../../providers/GeneralProvider"
 
 const Watchlist = () => {
-  const { getAllContracts } = useBinanceContext()
+  const { getAllContracts } = useBinance()
   const { handleAddNewWatchlistItems, handleAddTempWatchlist, watchlist } =
     useGeneralContext()
 

@@ -3,12 +3,12 @@ import React from "react"
 import RssFeedIcon from "@mui/icons-material/RssFeed"
 import QuestionMarkIcon from "@mui/icons-material/QuestionMark"
 import { useEffect, useState } from "react"
-import { useBinanceContext } from "../../providers/BinanceProvider"
+import { useBinance } from "../../providers/BinanceProvider"
 import "./control-panel.css"
 const defaultToggles = ["live-feed"]
 
 const ControlPanel = () => {
-  const { setIsLiveFeed, isLiveFeed } = useBinanceContext()
+  const { setIsLiveFeed, isLiveFeed } = useBinance()
   const [toggles, setToggles] = useState<string[]>(
     isLiveFeed ? defaultToggles : []
   )

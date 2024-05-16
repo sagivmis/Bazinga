@@ -446,5 +446,5 @@ export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
   )
 }
 
-export const useBinanceContext = () => useContext(BinanceContext)
+export const useBinance = () => useContext(BinanceContext)
 export default BinanceProvider

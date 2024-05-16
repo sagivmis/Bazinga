@@ -7,7 +7,7 @@ import {
   getDecimal
 } from "../../../util"
 import "./position.css"
-import { useBinanceContext } from "../../../providers/BinanceProvider"
+import { useBinance } from "../../../providers/BinanceProvider"
 import { useGeneralContext } from "../../../providers/GeneralProvider"
 
 interface IPosition {
@@ -24,7 +24,7 @@ const Position = (props: IPosition) => {
       formatNISAsNumber(position.positionAmt),
     [position.entryPrice, position.leverage, position.positionAmt]
   )
-  const { markPrices } = useBinanceContext()
+  const { markPrices } = useBinance()
   const { handleAddNewWatchlistItem } = useGeneralContext()
 
   const symbolPrice = markPrices[position.symbol]
