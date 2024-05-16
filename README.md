@@ -2,3 +2,6 @@
 
 ### Features
 - Watchlist
+- Live Statistics
+- Open Trades
+- Control Panel

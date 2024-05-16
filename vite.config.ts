@@ -1,12 +1,22 @@
 import { defineConfig } from "vite"
 import react from "@vitejs/plugin-react"
+import path from "path"
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   build: {
-    // Configure Vite for Electron
     emptyOutDir: true,
-    outDir: "dist"
+    outDir: "dist",
+    // Additional configuration to make sure Vite works well with Electron
+    rollupOptions: {
+      output: {
+        format: "cjs"
+      }
+    }
+  },
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src")
+    }
   }
 })
