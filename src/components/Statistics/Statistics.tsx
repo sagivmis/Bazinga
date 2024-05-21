@@ -25,6 +25,18 @@ const Statistics = () => {
   }
 
   const margin = useMemo(() => formatNISAsNumber(balance) + pnl, [balance, pnl])
+  const openMargin = useMemo(
+    () =>
+      openPositions.reduce(
+        (acc, value) =>
+          acc +
+          (formatNISAsNumber(value.entryPrice) /
+            formatNISAsNumber(value.leverage)) *
+            formatNISAsNumber(value.positionAmt),
+        0
+      ),
+    [openPositions]
+  )
   return (
     <div className='stats-container'>
       <div className='statistics'>
@@ -79,6 +91,12 @@ const Statistics = () => {
                 <Typography className='stat-row' variant='h6'>
                   <span className='stat-label'>Margin:</span>
                   <span className='stat-value'>{margin.toFixed(3)} USDT</span>
+                </Typography>
+                <Typography className='stat-row' variant='h6'>
+                  <span className='stat-label'>Open Margin:</span>
+                  <span className='stat-value'>
+                    {openMargin.toFixed(3)} USDT
+                  </span>
                 </Typography>
               </div>
               <div className='trades-statistics'>
