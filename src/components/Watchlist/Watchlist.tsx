@@ -13,13 +13,20 @@ const Watchlist = () => {
   const [data, setData] = useState<{ value: string; label: string }[]>([])
 
   const handleFetchContractsOptions = useCallback(async () => {
-    const contracts = await getAllContracts()
+    const contracts = (await getAllContracts()).filter((symbol) =>
+      symbol.includes("USDT")
+    )
+    const filtered = contracts.filter((contract) =>
+      watchlist.findIndex((item) => item.symbol === contract) >= 0
+        ? false
+        : true
+    )
     setData(
-      contracts.map((contract) => {
+      filtered.map((contract) => {
         return { value: contract, label: contract.toLocaleUpperCase() }
       })
     )
-  }, [getAllContracts])
+  }, [getAllContracts, watchlist])
 
   useEffect(() => {
     handleFetchContractsOptions()
