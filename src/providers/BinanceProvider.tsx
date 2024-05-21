@@ -9,7 +9,7 @@ import {
   useMemo,
   useState
 } from "react"
-import { Prices, ProviderProps } from "../types"
+import { FormattedMessageData, Prices, ProviderProps } from "../types"
 import {
   BasicSymbolParam,
   CancelAllOpenOrdersResult,
@@ -19,6 +19,7 @@ import {
   FuturesPosition,
   FuturesSymbolOrderBookTicker,
   Kline,
+  KlineInterval,
   KlinesParams,
   MainClient,
   MarkPrice,
@@ -35,12 +36,8 @@ import moment from "moment"
 import { useGeneralContext } from "./GeneralProvider"
 import { formatNISAsNumber, live_websocket_url } from "../util"
 
-const api_key =
-  "iob6RmsJ82KbcVoQyCa1tWQIIRsplmkU0afLUNYAuPKEPNXiPcyUCR2vb1A4gvdt"
-const secret_key =
-  "kyQBGvrDpluL5CbfwxsgPiSpet7ffgxYotVPUr2eCLl6Qdc3cMzvNDNSIfzaBF8v"
-
 interface IBinanceContext {
+  wsClient: WebsocketClient
   mainClient: MainClient
   usdmClient: USDMClient
   openPositions: FuturesPosition[]
@@ -75,8 +72,11 @@ interface IBinanceContext {
   getAllContracts: () => Promise<string[]>
   getBalances: () => Promise<FuturesAccountBalance[]>
   futuresUsdtBalance: numberInString
+  subscribeKlines: (symbol: string, interval: KlineInterval) => void
 }
 const defaultBinanceContext: IBinanceContext = {
+  subscribeKlines: () => {},
+  wsClient: new WebsocketClient({}),
   mainClient: new MainClient(),
   usdmClient: new USDMClient(),
   openPositions: [],
@@ -132,8 +132,11 @@ const defaultBinanceContext: IBinanceContext = {
 
 const BinanceContext = createContext<IBinanceContext>(defaultBinanceContext)
 
+const api_key = process.env.API_KEY
+const api_secret = process.env.API_SECRET
+
 export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
-  const { watchlist } = useGeneralContext()
+  const { watchlist, market } = useGeneralContext()
   const [pnl, setPnl] = useState(0)
   const [prices, setPrices] = useState<Prices>({})
   const [isLiveFeed, setIsLiveFeed] = useState(true)
@@ -143,37 +146,44 @@ export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
   const [openPositions, setOpenPositions] = useState<FuturesPosition[]>([])
   //#region CLIENTS
 
-  const mainClient = useMemo(
-    () => new MainClient({ api_key, api_secret: secret_key }),
-    []
-  )
+  const mainClient = useMemo(() => new MainClient({ api_key, api_secret }), [])
+
   const usdmClient = useMemo(
     () =>
       new USDMClient({
         // baseUrl: testnet_url,
         api_key,
-        api_secret: secret_key
+        api_secret
       }),
     []
   )
 
-  const ws = useMemo(
+  const wsClient = useMemo(
     () =>
       new WebsocketClient({
         wsUrl: websocket_url,
         api_key,
-        api_secret: secret_key,
+        api_secret,
         beautify: true
       }),
     [websocket_url]
   )
+
   //#endregion
 
-  //#region METHODS
+  //#region FUTURES METHODS
+  const subscribeKlines = useCallback(
+    (symbol: string, interval: KlineInterval) => {
+      wsClient.subscribeKlines(symbol, interval, market)
+    },
+    [market, wsClient]
+  )
+
   const ping = useCallback(async () => {
     const response = await usdmClient.testConnectivity()
     return response
   }, [usdmClient])
+
   const getBalances = useCallback(async () => {
     const response = await usdmClient.getBalance()
     return response
@@ -255,14 +265,18 @@ export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
     [usdmClient]
   )
 
+  /**
+   * default limit is 1000
+   */
   const getKlines = useCallback(
     async (params: KlinesParams) => {
-      const response = await usdmClient.getKlines(params)
-
+      const response = await usdmClient.getKlines({ limit: 1000, ...params })
+      // mainClient.getKlines(params)
       return response
     },
     [usdmClient]
   )
+
   const getMarkPrice = useCallback(
     async (params?: Partial<BasicSymbolParam>) => {
       const response = await usdmClient.getMarkPrice(params)
@@ -295,7 +309,7 @@ export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
   //#endregion
 
   useEffect(() => {
-    ws.on("open", () => {
+    wsClient.on("open", () => {
       console.log(
         `Connection to WebsocketClient initiated @${moment(new Date()).format(
           "D MMM, YYYY, h:mm:ss a"
@@ -303,41 +317,45 @@ export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
       )
     })
 
-    ws.on("reconnecting", (data) => {
+    wsClient.on("reconnecting", (data) => {
       console.log(`Reconnecting to ${data.wsKey} `)
     })
 
-    ws.on("reconnected", (data) => {
+    wsClient.on("reconnected", (data) => {
       console.log(`Reconnected to ${data.wsKey}`)
     })
 
-    ws.on("formattedMessage", (data) => {
-      console.log("formattedMessage: ", data)
-      // data.event.
-
-      //@ts-expect-error FIX PACKAGE TYPE
+    //@ts-expect-error wrong package type
+    wsClient.on("formattedMessage", (data: FormattedMessageData) => {
+      // console.log("formattedMessage: ", data)
       if (data.eventType == "markPriceUpdate") {
         setPrices((prevPrices) => {
-          //@ts-expect-error FIX PACKAGE TYPE
-          return { ...prevPrices, [data.symbol]: data.markPrice }
+          if (data.markPrice) {
+            return { ...prevPrices, [data.symbol]: data.markPrice }
+          }
+          return { ...prevPrices }
         })
       }
     })
 
-    ws.on("reply", (data) => {
+    wsClient.on("reply", (data) => {
       console.log("log reply: ", JSON.stringify(data, null, 2))
     })
 
-    ws.on("error", (data) => {
+    wsClient.on("error", (data) => {
       console.log("ws saw error ", data?.wsKey)
     })
-  }, [ws])
+  }, [wsClient])
 
   useEffect(() => {
-    watchlist.forEach((pair) => {
-      ws.subscribeMarkPrice(pair.symbol, "usdm")
-    })
-  }, [watchlist, ws])
+    if (isLiveFeed)
+      watchlist.forEach((pair) => {
+        wsClient.subscribeMarkPrice(pair.symbol, "usdm")
+      })
+    else {
+      wsClient.closeAll()
+    }
+  }, [isLiveFeed, watchlist, wsClient])
 
   const handleFetchBalance = useCallback(async () => {
     const res = await getBalances()
@@ -351,7 +369,6 @@ export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
       (acc, val) => acc + parseFloat(val.unRealizedProfit.toString()),
       0
     )
-    console.log(newPnl)
     setPnl(newPnl)
   }, [usdmClient])
 
@@ -389,6 +406,8 @@ export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
 
   const providerMemo = useMemo<IBinanceContext>(
     () => ({
+      wsClient,
+      subscribeKlines,
       mainClient,
       openPositions,
       pnl,
@@ -414,6 +433,8 @@ export const BinanceProvider: React.FC<ProviderProps> = ({ children }) => {
       markPrices: prices
     }),
     [
+      wsClient,
+      subscribeKlines,
       mainClient,
       openPositions,
       pnl,
