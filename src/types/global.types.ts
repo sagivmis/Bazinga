@@ -1,4 +1,7 @@
+import { KlineInterval, numberInString } from "binance"
 import { ReactNode } from "react"
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+;(window as any).global = window
 
 export type ProviderProps = {
   children: ReactNode
@@ -51,3 +54,35 @@ export type WatchlistItemType = {
 export type Price = { bid: number; ask: number }
 export type PriceFloat = number
 export type Prices = Record<string, PriceFloat>
+
+export interface StreamKline {
+  startTime: number
+  endTime: number
+  symbol: string
+  interval: KlineInterval
+  firstTradeId: number
+  lastTradeId: number
+  open: numberInString
+  close: numberInString
+  high: numberInString
+  low: numberInString
+  volume: numberInString
+  trades: number
+  final: boolean
+  quoteVolume: numberInString
+  volumeActive: numberInString
+  quoteVolumeActive: numberInString
+  ignored: numberInString
+}
+
+export type FormattedMessageEventType = "kline" | "markPriceUpdate"
+
+export type FormattedMessageData = {
+  eventType: FormattedMessageEventType
+  kline?: StreamKline
+  markPrice?: number
+  eventTime: number
+  symbol: string
+  wsKey: string
+  wsMarket: string
+}

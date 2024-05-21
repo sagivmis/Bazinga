@@ -1,4 +1,5 @@
-import { numberInString } from "binance"
+import { KlineInterval, numberInString } from "binance"
+import { MS } from "./consts"
 
 export const getDecimal = (value: number) => {
   const splittedNum = value.toString().split(".")
@@ -22,3 +23,20 @@ export const formatPnl = (value: numberInString) => {
 export const formatPositionValue = (value: numberInString, decimals = 3) => {
   return formatNISAsString(value, decimals)
 }
+
+/**
+ *
+ * @param timestamp1 current timestamp
+ * @param timestamp2 open timestamp
+ * @param interval strategy interval
+ * @returns boolean
+ */
+export const isComplete = (
+  timestamp1: number,
+  timestamp2: number,
+  interval: KlineInterval
+) => {
+  return timestamp1 - timestamp2 >= MS[interval]
+}
+
+// export const isComplete2 = eventTime
