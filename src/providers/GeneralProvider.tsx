@@ -10,9 +10,12 @@ import {
 import { ProviderProps, WatchlistItemType } from "../types"
 import { MultiValue } from "react-select"
 
+type MarketType = "usdm" | "spot"
 interface IGeneralContext {
   watchlist: WatchlistItemType[]
   tempWatchlist: WatchlistItemType[]
+  market: MarketType
+  setMarket: Dispatch<SetStateAction<MarketType>>
   setWatchlist: Dispatch<SetStateAction<WatchlistItemType[]>>
   setTempWatchlist: Dispatch<SetStateAction<WatchlistItemType[]>>
   handleAddNewWatchlistItems: () => void
@@ -31,14 +34,17 @@ const defaultGeneralContext: IGeneralContext = {
   handleAddTempWatchlist: () => {},
   setTempWatchlist: () => [],
   setWatchlist: () => [],
+  setMarket: () => "usdm",
   tempWatchlist: [],
-  watchlist: []
+  watchlist: [],
+  market: "usdm"
 }
 
 const GeneralContext = createContext<IGeneralContext>(defaultGeneralContext)
 
 export const GeneralProvider: React.FC<ProviderProps> = ({ children }) => {
   const [watchlist, setWatchlist] = useState<WatchlistItemType[]>([])
+  const [market, setMarket] = useState<MarketType>("usdm")
   const [tempWatchlist, setTempWatchlist] = useState<WatchlistItemType[]>([])
 
   const handleAddNewWatchlistItems = useCallback(() => {
@@ -79,6 +85,8 @@ export const GeneralProvider: React.FC<ProviderProps> = ({ children }) => {
 
   const providerMemo = useMemo<IGeneralContext>(() => {
     return {
+      market,
+      setMarket,
       handleAddNewWatchlistItem,
       handleAddNewWatchlistItems,
       handleAddTempWatchlist,
@@ -88,6 +96,8 @@ export const GeneralProvider: React.FC<ProviderProps> = ({ children }) => {
       watchlist
     }
   }, [
+    market,
+    setMarket,
     handleAddNewWatchlistItem,
     handleAddNewWatchlistItems,
     tempWatchlist,
