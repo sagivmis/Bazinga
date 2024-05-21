@@ -27,7 +27,7 @@ const Positions = () => {
   return (
     <div className='positions-container'>
       <div className='open-positions'>
-        {[defaultPosition].map((position) => (
+        {[defaultPosition, ...openPositions].map((position) => (
           <Position position={position} />
         ))}
       </div>
