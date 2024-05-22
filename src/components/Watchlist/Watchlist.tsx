@@ -16,10 +16,9 @@ const Watchlist = () => {
     const contracts = (await getAllContracts()).filter((symbol) =>
       symbol.includes("USDT")
     )
-    const filtered = contracts.filter((contract) =>
-      watchlist.findIndex((item) => item.symbol === contract) >= 0
-        ? false
-        : true
+    const filtered = contracts.filter(
+      (contract) =>
+        !(watchlist.findIndex((item) => item.symbol === contract) >= 0)
     )
     setData(
       filtered.map((contract) => {

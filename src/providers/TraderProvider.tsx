@@ -57,7 +57,7 @@ export const TraderProvider: React.FC<ProviderProps> = ({ children }) => {
 
   const currentKline = useRef<Kline>()
   const currentEndTime = useRef<number>()
-  const [shouldParseData, setShouldParseData] = useState<boolean>(false)
+  const [shouldParseData, setShouldParseData] = useState<boolean>(true)
   const isFinal = useRef<Record<string, boolean>>({})
 
   const handlePrepareData = useCallback(() => {
@@ -87,7 +87,7 @@ export const TraderProvider: React.FC<ProviderProps> = ({ children }) => {
             ema: emas[index],
             vwap: vwaps[index],
             vwma: vwmas[index],
-            complete: new Date().getTime() - kline[0] <= MS["1m"]
+            complete: new Date().getTime() - kline[0] >= MS["1m"]
           }
         }
       )
