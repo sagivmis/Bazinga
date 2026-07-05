@@ -1,0 +1,93 @@
+.heatmap-lab {
+  /* Standalone window: theme.css sets overflow:hidden on #root — scroll here */
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 20px 24px 40px;
+  max-width: 1680px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.heatmap-lab-header {
+  margin-bottom: 20px;
+}
+
+.heatmap-lab-header h1 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.heatmap-lab-header p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.heatmap-lab-grid {
+  display: grid;
+  grid-template-columns: minmax(380px, 480px) 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .heatmap-lab-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.heatmap-lab-panel {
+  padding: 16px;
+}
+
+.weight-axis-table {
+  margin: 8px 0 12px;
+  max-height: 280px;
+  overflow: auto;
+}
+
+.axis-num-input {
+  width: 56px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border, #1e293b);
+  background: #1a2235;
+  color: var(--text, #e2e8f0);
+  font-size: 12px;
+  text-align: right;
+}
+
+.run-estimate {
+  font-size: 13px;
+  margin: 0 0 12px;
+}
+
+.slice-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+
+.heatmap-lab-results {
+  margin-top: 16px;
+  padding: 16px;
+}
+
+.results-table-wrap {
+  max-height: min(70vh, 800px);
+  overflow: auto;
+  margin-top: 12px;
+  border: 1px solid var(--border, #1e293b);
+  border-radius: 8px;
+}
+
+.results-table-wrap .positive {
+  color: var(--accent-teal, #00e5c3);
+}
+
+.results-table-wrap .negative {
+  color: var(--accent-pink, #ff4d8d);
+}
