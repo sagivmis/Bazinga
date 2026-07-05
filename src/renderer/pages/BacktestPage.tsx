@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react"
 import { Button, Alert } from "@mui/material"
-import type { BacktestResult, EnsembleMemberConfig, StrategyParams } from "../../shared/types"
+import type { AlgoSetup, AlgoSetupInput, BacktestResult, EnsembleMemberConfig, StrategyParams } from "../../shared/types"
 import type { HeatmapApplyPayload } from "../../shared/backtestSweepTypes"
 import { useBacktestStore } from "../stores/backtestStore"
 import { useHeatmapLabSync } from "../hooks/useHeatmapLabSync"
-import { formatPct, formatUsd } from "../../shared/format"
+import { formatPct, formatUsd, resolveBacktestTotalPnl } from "../../shared/format"
 import { IPC } from "../../shared/ipc"
 import { ENSEMBLE_STRATEGY_ID, defaultEnsembleMembers } from "../../shared/ensembleUtils"
 import { schemaWithoutLeverage } from "../../shared/leverageUtils"
@@ -12,6 +12,13 @@ import type { ParamField } from "../../shared/sweepUtils"
 import EnsembleBuilder from "../components/ensemble/EnsembleBuilder"
 import ParameterHeatmapPanel from "../components/backtest/ParameterHeatmapPanel"
 import OpenHeatmapLabButton from "../components/backtest/OpenHeatmapLabButton"
+import SetupLibraryPanel from "../components/algo/SetupLibraryPanel"
+import { recordSetupAsync } from "../stores/setupLibraryStore"
+import {
+  persistAlgoBuilderDraft,
+  persistBacktestDraft,
+  useWorkspaceStore
+} from "../stores/workspaceStore"
 import { LeverageParamsSection } from "../components/forms/LeverageParamsSection"
 import {
   CompactField,
@@ -20,6 +27,7 @@ import {
   FormSection,
   StrategyParamsGrid
 } from "../components/forms/CompactField"
+import SymbolField from "../components/forms/SymbolField"
 
 type StrategyMeta = {
   id: string
@@ -30,7 +38,8 @@ type StrategyMeta = {
 }
 
 export default function BacktestPage() {
-  const { history, load } = useBacktestStore()
+  const { history, load, latest } = useBacktestStore()
+  const workspaceLoaded = useWorkspaceStore((s) => s.loaded)
   const [strategies, setStrategies] = useState<StrategyMeta[]>([])
   const [strategyId, setStrategyId] = useState("wyckoff-spring")
   const [params, setParams] = useState<StrategyParams>({})
@@ -43,28 +52,70 @@ export default function BacktestPage() {
   const [result, setResult] = useState<BacktestResult | null>(null)
   const [sweepResult, setSweepResult] = useState<import("../../shared/types").BacktestSweepResult | null>(null)
   const [labApplied, setLabApplied] = useState<HeatmapApplyPayload | null>(null)
+  const [hydrated, setHydrated] = useState(false)
 
   const isEnsemble = strategyId === ENSEMBLE_STRATEGY_ID
   const baseStrategies = strategies.filter((s) => s.id !== ENSEMBLE_STRATEGY_ID)
 
   useEffect(() => {
-    if (window.api) {
-      void Promise.all([
-        window.api.strategies.list(),
-        window.api.backtest.getLatestSweep(),
-        load()
-      ]).then(([list, latestSweep]) => {
-        const items = list as StrategyMeta[]
-        setStrategies(items)
+    if (!window.api) return
+    void Promise.all([
+      window.api.strategies.list(),
+      window.api.backtest.getLatestSweep(),
+      load(),
+      useWorkspaceStore.getState().init()
+    ]).then(([list, latestSweep]) => {
+      const items = list as StrategyMeta[]
+      setStrategies(items)
+
+      const saved = useWorkspaceStore.getState().workspace?.backtest
+      if (saved?.strategyId) {
+        setStrategyId(saved.strategyId)
+        setParams(saved.params ?? {})
+        setSymbol(saved.symbol ?? "BTCUSDT")
+        setInterval(saved.interval ?? "4h")
+        setDays(saved.days ?? 90)
+        if (saved.ensemble?.length) {
+          setEnsemble(saved.ensemble.map((m) => ({ ...m, params: { ...(m.params ?? {}) } })))
+        }
+      } else {
         const first = items.find((s) => s.id === "wyckoff-spring") ?? items[0]
         if (first) {
           setStrategyId(first.id)
           setParams(first.defaultParams ?? {})
         }
-        if (latestSweep) setSweepResult(latestSweep)
-      })
-    }
+      }
+
+      if (latestSweep) setSweepResult(latestSweep)
+      setHydrated(true)
+    })
   }, [load])
+
+  useEffect(() => {
+    if (latest && hydrated) setResult(latest)
+  }, [latest, hydrated])
+
+  useEffect(() => {
+    if (!hydrated || !workspaceLoaded) return
+    persistBacktestDraft({
+      strategyId,
+      params,
+      symbol,
+      interval: interval as import("binance").KlineInterval,
+      days,
+      ensemble: isEnsemble ? ensemble : undefined
+    })
+  }, [
+    hydrated,
+    workspaceLoaded,
+    strategyId,
+    params,
+    symbol,
+    interval,
+    days,
+    ensemble,
+    isEnsemble
+  ])
 
   useEffect(() => {
     if (!window.api) return
@@ -107,6 +158,14 @@ export default function BacktestPage() {
         ensemble: isEnsemble ? ensemble : undefined
       })
       setResult(res)
+      recordSetupAsync({
+        strategyId,
+        params,
+        symbols: [symbol],
+        interval: interval as import("binance").KlineInterval,
+        ensemble: isEnsemble ? ensemble : undefined,
+        source: "backtest"
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : "Backtest failed")
     } finally {
@@ -120,10 +179,36 @@ export default function BacktestPage() {
   }, [])
 
   useHeatmapLabSync(useCallback((nextParams, nextEnsemble, payload) => {
+    if (payload.strategyId) setStrategyId(payload.strategyId)
     setParams(nextParams)
     setEnsemble(nextEnsemble)
     setLabApplied(payload)
-  }, []))
+    recordSetupAsync({
+      strategyId: payload.strategyId ?? strategyId,
+      params: nextParams,
+      symbols: [symbol],
+      interval: interval as import("binance").KlineInterval,
+      ensemble: payload.strategyId === ENSEMBLE_STRATEGY_ID ? nextEnsemble : undefined,
+      source: "heatmap"
+    })
+  }, [strategyId, symbol, interval]))
+
+  const getCurrentSetup = useCallback((): AlgoSetupInput => ({
+    strategyId,
+    params: { ...params },
+    symbols: [symbol],
+    interval: interval as import("binance").KlineInterval,
+    ensemble: isEnsemble ? ensemble : undefined,
+    source: "saved"
+  }), [strategyId, params, symbol, interval, isEnsemble, ensemble])
+
+  const handleLoadSetup = useCallback((setup: AlgoSetup) => {
+    setStrategyId(setup.strategyId)
+    setParams({ ...setup.params })
+    if (setup.symbols[0]) setSymbol(setup.symbols[0])
+    if (setup.interval) setInterval(setup.interval)
+    if (setup.ensemble?.length) setEnsemble(setup.ensemble.map((m) => ({ ...m, params: { ...(m.params ?? {}) } })))
+  }, [])
 
   return (
     <div className="page-content">
@@ -132,6 +217,12 @@ export default function BacktestPage() {
         Test single strategies or weighted ensembles. Use the heatmap to find optimal weights and
         parameters.
       </p>
+
+      <SetupLibraryPanel
+        strategies={strategies}
+        getCurrentSetup={getCurrentSetup}
+        onLoad={handleLoadSetup}
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 2, maxWidth: 720 }}>
@@ -160,11 +251,10 @@ export default function BacktestPage() {
 
         <FormSection title="Market">
           <FormRow>
-            <CompactField
+            <SymbolField
               className="field-grow"
-              label="Symbol"
               value={symbol}
-              onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+              onChange={setSymbol}
             />
             <CompactField
               className="field-md"
@@ -266,6 +356,13 @@ export default function BacktestPage() {
               <strong className={result.metrics.totalReturn >= 0 ? "positive" : "negative"}>
                 {formatPct(result.metrics.totalReturn)}
               </strong>
+              <br />
+              <span
+                style={{ fontSize: 12 }}
+                className={resolveBacktestTotalPnl(result.metrics, result.equityCurve) >= 0 ? "positive" : "negative"}
+              >
+                ${formatUsd(resolveBacktestTotalPnl(result.metrics, result.equityCurve))}
+              </span>
             </div>
             <div>
               <span style={{ color: "var(--text-muted)", fontSize: 11 }}>Trades</span>

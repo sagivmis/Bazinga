@@ -2,11 +2,13 @@ import { Outlet } from "react-router-dom"
 import Sidebar from "./Sidebar"
 import Header from "./Header"
 import Footer from "./Footer"
+import WorkspaceSync from "../components/WorkspaceSync"
 import "./app-shell.css"
 
 export default function AppShell() {
   return (
     <div className="app-shell">
+      <WorkspaceSync />
       <Sidebar />
       <div className="app-main">
         <Header />

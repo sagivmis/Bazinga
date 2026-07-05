@@ -8,16 +8,20 @@ import type {
   Candle,
   EnsembleMultiSweepCell,
   EnsembleMultiSweepResult,
+  StrategyParamMultiSweepCell,
+  StrategyParamMultiSweepResult,
   StrategyParams
 } from "../../shared/types"
 import type {
   BacktestSweepRequest,
-  EnsembleMultiSweepRequest
+  EnsembleMultiSweepRequest,
+  StrategyParamMultiSweepRequest
 } from "../../shared/backtestSweepTypes"
 import {
   applyWeightCombination,
   buildWeightCombinations
 } from "./ensembleSweep"
+import { applyParamCombination, buildParamCombinations } from "./paramSweep"
 import {
   compositeScore,
   formatSweepValue,
@@ -153,6 +157,67 @@ export class BacktestRunner {
 
   getLatestEnsembleMultiSweep() {
     return this.results.getLatestEnsembleMultiSweep()
+  }
+
+  getLatestStrategyParamMultiSweep() {
+    return this.results.getLatestStrategyParamMultiSweep()
+  }
+
+  async strategyParamMultiSweep(
+    req: StrategyParamMultiSweepRequest,
+    onProgress?: (done: number, total: number) => void
+  ): Promise<StrategyParamMultiSweepResult> {
+    const candles = await this.fetchCandles(req.symbol, req.interval, req.startTime, req.endTime)
+    const combinations = buildParamCombinations(req.paramAxes)
+    const cells: StrategyParamMultiSweepCell[] = []
+    const total = combinations.length
+
+    for (let i = 0; i < combinations.length; i++) {
+      const values = combinations[i]
+      const params = applyParamCombination(req.baseParams, values)
+      const result = this.runOnCandles(
+        candles,
+        {
+          strategyId: req.strategyId,
+          symbol: req.symbol,
+          interval: req.interval,
+          startTime: req.startTime,
+          endTime: req.endTime,
+          params,
+          initialBalance: req.initialBalance
+        },
+        false
+      )
+      cells.push({
+        values: { ...values },
+        params: { ...params },
+        metrics: result.metrics
+      })
+      onProgress?.(i + 1, total)
+    }
+
+    if (!cells.length) {
+      throw new Error("No parameter combinations to sweep")
+    }
+
+    const bestCell = cells.reduce((best, cell) =>
+      compositeScore(cell.metrics) > compositeScore(best.metrics) ? cell : best
+    )
+
+    const sweepResult: StrategyParamMultiSweepResult = {
+      id: `psw-${Date.now()}`,
+      strategyId: req.strategyId,
+      symbol: req.symbol,
+      interval: req.interval,
+      paramAxes: req.paramAxes.filter((a) => a.enabled),
+      cells,
+      bestCell,
+      createdAt: Date.now(),
+      totalRuns: cells.length
+    }
+
+    this.results.saveStrategyParamMultiSweep(sweepResult)
+    return sweepResult
   }
 
   async ensembleMultiSweep(
@@ -316,6 +381,7 @@ export class BacktestRunner {
 
     return {
       totalReturn,
+      totalPnl,
       winRate,
       sharpeRatio,
       maxDrawdown,

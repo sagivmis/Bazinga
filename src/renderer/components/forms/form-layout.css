@@ -116,3 +116,18 @@
 .form-field-full.compact-field {
   max-width: 100%;
 }
+
+.leverage-slider {
+  width: 100%;
+  max-width: 420px;
+  padding: 4px 4px 0;
+}
+
+.leverage-slider--compact {
+  max-width: 100%;
+  margin-bottom: 8px;
+}
+
+.leverage-slider .MuiSlider-root {
+  padding: 8px 0;
+}

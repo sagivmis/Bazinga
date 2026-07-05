@@ -8,6 +8,7 @@ export function defaultWeightAxes(
   return members
     .filter((m) => m.enabled !== false)
     .map((m) => ({
+      key: m.strategyId,
       strategyId: m.strategyId,
       label: nameById[m.strategyId] ?? m.strategyId,
       min: 10,

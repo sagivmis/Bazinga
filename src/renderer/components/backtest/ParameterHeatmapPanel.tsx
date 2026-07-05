@@ -221,6 +221,9 @@ export default function ParameterHeatmapPanel({
               <>
                 {" · Return "}
                 {labApplied.metrics.totalReturn.toFixed(2)}%
+                {" ($"}
+                {(labApplied.metrics.totalPnl ?? 0).toFixed(2)}
+                {")"}
                 {" · "}
                 {labApplied.metrics.totalTrades} trades
                 {" · Score "}

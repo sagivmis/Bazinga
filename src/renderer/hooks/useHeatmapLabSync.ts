@@ -22,15 +22,19 @@ export function useHeatmapLabSync(onApply: ApplyHandler) {
 }
 
 export function cellToApplyPayload(
+  strategyId: string,
   params: StrategyParams,
   ensemble: EnsembleMemberConfig[],
-  weights: Record<string, number>,
-  metrics?: HeatmapApplyPayload["metrics"]
+  values: Record<string, number>,
+  metrics?: HeatmapApplyPayload["metrics"],
+  mode: "ensemble" | "strategy" = "strategy"
 ): HeatmapApplyPayload {
   return {
+    strategyId,
     params: { ...params },
     ensemble: ensemble.map((m) => ({ ...m, params: { ...m.params } })),
-    weights: { ...weights },
+    weights: mode === "ensemble" ? { ...values } : undefined,
+    paramValues: mode === "strategy" ? { ...values } : undefined,
     metrics,
     source: "heatmap-lab"
   }

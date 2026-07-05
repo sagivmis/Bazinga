@@ -120,6 +120,7 @@ export interface BacktestResult {
   equityCurve: { time: number; equity: number }[]
   metrics: {
     totalReturn: number
+    totalPnl: number
     winRate: number
     sharpeRatio: number
     maxDrawdown: number
@@ -174,11 +175,59 @@ export interface EnsembleMultiSweepResult {
   totalRuns: number
 }
 
+export interface StrategyParamMultiSweepCell {
+  values: Record<string, number>
+  params: StrategyParams
+  metrics: BacktestResult["metrics"]
+}
+
+export interface StrategyParamMultiSweepResult {
+  id: string
+  strategyId: string
+  symbol: string
+  interval: KlineInterval
+  paramAxes: import("./backtestSweepTypes").ParamSweepAxis[]
+  cells: StrategyParamMultiSweepCell[]
+  bestCell: StrategyParamMultiSweepCell
+  createdAt: number
+  totalRuns: number
+}
+
 export interface EngineConfig {
   strategyId: string
   params: StrategyParams
   symbols: string[]
+  interval?: KlineInterval
   ensemble?: EnsembleMemberConfig[]
+}
+
+export type AlgoSetupSource = "armed" | "saved" | "backtest" | "heatmap"
+
+/** Saved or recently used algorithm configuration for quick reload. */
+export interface AlgoSetup {
+  id: string
+  name?: string
+  strategyId: string
+  params: StrategyParams
+  symbols: string[]
+  interval?: KlineInterval
+  ensemble?: EnsembleMemberConfig[]
+  favorite: boolean
+  /** User explicitly saved this setup with a name. */
+  saved: boolean
+  source: AlgoSetupSource
+  createdAt: number
+  lastUsedAt: number
+}
+
+export type AlgoSetupInput = Pick<
+  AlgoSetup,
+  "strategyId" | "params" | "symbols" | "interval" | "ensemble"
+> & {
+  source: AlgoSetupSource
+  name?: string
+  favorite?: boolean
+  saved?: boolean
 }
 
 export interface AppSettings {
@@ -191,6 +240,31 @@ export interface AppSettings {
   engineConfig?: EngineConfig
 }
 
+/** Per-page draft UI persisted across app restarts (electron-store: bazinga-workspace.json). */
+export interface BacktestWorkspace {
+  strategyId: string
+  params: StrategyParams
+  symbol: string
+  interval: KlineInterval
+  days: number
+  ensemble?: EnsembleMemberConfig[]
+}
+
+export interface AlgoBuilderWorkspace {
+  heatmapDays: number
+}
+
+export interface AppWorkspace {
+  version: number
+  /** Last visited in-app route, e.g. /backtest */
+  lastRoute: string
+  /** Live Algo Builder draft — auto-saved while editing */
+  engineDraft?: EngineConfig
+  backtest?: BacktestWorkspace
+  algoBuilder: AlgoBuilderWorkspace
+  updatedAt: number
+}
+
 export interface ConnectionStatus {
   connected: boolean
   latencyMs: number
@@ -201,6 +275,7 @@ export interface EngineStatus {
   armed: boolean
   strategyId: string | null
   runningSymbols: string[]
+  interval?: KlineInterval
 }
 
 export interface MarketTicker {

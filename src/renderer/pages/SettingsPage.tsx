@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { TextField, Button, Switch, FormControlLabel, Alert } from "@mui/material"
 import type { AppSettings } from "../../shared/types"
 import { useLeverageStore } from "../stores/leverageStore"
+import LeverageSlider from "../components/forms/LeverageSlider"
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<AppSettings | null>(null)
@@ -75,20 +76,14 @@ export default function SettingsPage() {
 
       <div className="panel" style={{ padding: 20, maxWidth: 520, marginBottom: 16 }}>
         <h3 style={{ marginTop: 0 }}>Trading defaults</h3>
-        <TextField
+        <LeverageSlider
           label="Default leverage"
-          size="small"
-          type="number"
-          fullWidth
           value={settings?.defaultLeverage ?? 10}
-          onChange={async (e) => {
-            const v = parseInt(e.target.value, 10) || 10
+          onChange={async (v) => {
             await saveSettings({ defaultLeverage: v })
             useLeverageStore.getState().applyDefault(v)
           }}
-          inputProps={{ min: 1, max: 125, step: 1 }}
           helperText="Preferred leverage for new symbols. Order entry overrides are local only."
-          sx={{ mb: 2 }}
         />
       </div>
 

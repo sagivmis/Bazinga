@@ -1,5 +1,8 @@
 import type {
   AppSettings,
+  AlgoSetup,
+  AlgoSetupInput,
+  AppWorkspace,
   BacktestRequest,
   BacktestResult,
   OrderIntent,
@@ -47,6 +50,7 @@ export interface BazingaApi {
       strategyId: string
       params: StrategyParams
       symbols: string[]
+      interval?: KlineInterval
       ensemble?: import("../shared/types").EnsembleMemberConfig[]
     }) => Promise<import("../shared/types").EngineStatus>
     disarm: () => Promise<import("../shared/types").EngineStatus>
@@ -63,12 +67,28 @@ export interface BazingaApi {
       req: import("../shared/backtestSweepTypes").EnsembleMultiSweepRequest
     ) => Promise<import("../shared/types").EnsembleMultiSweepResult>
     getLatestEnsembleMultiSweep: () => Promise<import("../shared/types").EnsembleMultiSweepResult | null>
+    strategyParamMultiSweep: (
+      req: import("../shared/backtestSweepTypes").StrategyParamMultiSweepRequest
+    ) => Promise<import("../shared/types").StrategyParamMultiSweepResult>
+    getLatestStrategyParamMultiSweep: () => Promise<import("../shared/types").StrategyParamMultiSweepResult | null>
   }
   heatmap: {
     setBootstrap: (config: import("../shared/backtestSweepTypes").HeatmapLabBootstrap) => Promise<void>
     getBootstrap: () => Promise<import("../shared/backtestSweepTypes").HeatmapLabBootstrap | null>
     openLab: () => Promise<void>
     apply: (payload: import("../shared/backtestSweepTypes").HeatmapApplyPayload) => Promise<void>
+  }
+  setups: {
+    list: () => Promise<{ recent: AlgoSetup[]; saved: AlgoSetup[] }>
+    record: (input: AlgoSetupInput) => Promise<AlgoSetup>
+    save: (args: AlgoSetupInput & { name: string }) => Promise<AlgoSetup>
+    touch: (id: string) => Promise<AlgoSetup | null>
+    toggleFavorite: (id: string) => Promise<AlgoSetup | null>
+    remove: (id: string) => Promise<boolean>
+  }
+  workspace: {
+    get: () => Promise<AppWorkspace>
+    patch: (partial: Partial<AppWorkspace>) => Promise<AppWorkspace>
   }
   on: (channel: string, listener: (_: unknown, data: unknown) => void) => () => void
 }

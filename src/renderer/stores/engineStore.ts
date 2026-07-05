@@ -1,10 +1,14 @@
 import { create } from "zustand"
-import type { EngineStatus, EnsembleMemberConfig, StrategyParams } from "../../shared/types"
+import type { EngineStatus, EnsembleMemberConfig, StrategyParams, AlgoSetup } from "../../shared/types"
+import type { KlineInterval } from "binance"
 import {
   ENSEMBLE_STRATEGY_ID,
   defaultEnsembleMembers
 } from "../../shared/ensembleUtils"
-import { DEFAULT_SYMBOL } from "../../shared/constants"
+import { DEFAULT_SYMBOL, DEFAULT_INTERVAL } from "../../shared/constants"
+import { recordSetupAsync } from "./setupLibraryStore"
+import { isEngineDraftUsable } from "../../shared/workspaceUtils"
+import { normalizeSymbol } from "../../shared/symbolUtils"
 
 type StrategyMeta = {
   id: string
@@ -17,6 +21,7 @@ type StrategyMeta = {
 interface EngineState extends EngineStatus {
   params: StrategyParams
   symbols: string[]
+  interval: KlineInterval
   ensemble: EnsembleMemberConfig[]
   error: string | null
   init: () => Promise<void>
@@ -25,6 +30,8 @@ interface EngineState extends EngineStatus {
   setParams: (params: StrategyParams) => void
   setEnsemble: (ensemble: EnsembleMemberConfig[]) => void
   setSymbol: (symbol: string) => void
+  setInterval: (interval: KlineInterval) => void
+  loadSetup: (setup: AlgoSetup) => void
   saveConfig: () => Promise<void>
   armEngine: () => Promise<void>
   disarmEngine: () => Promise<void>
@@ -39,20 +46,23 @@ export const useEngineStore = create<EngineState>((set, get) => ({
   runningSymbols: [],
   params: {},
   symbols: [DEFAULT_SYMBOL],
+  interval: DEFAULT_INTERVAL,
   ensemble: defaultEnsembleMembers(),
   error: null,
 
   init: async () => {
     if (!window.api) return
     try {
-      const [status, settings, strategies] = await Promise.all([
+      const [status, settings, strategies, workspace] = await Promise.all([
         window.api.engine.getStatus(),
         window.api.settings.get(),
-        window.api.strategies.list()
+        window.api.strategies.list(),
+        window.api.workspace?.get() ?? Promise.resolve(null)
       ])
       strategyCatalog = strategies as StrategyMeta[]
 
-      const cfg = settings.engineConfig
+      const draft = workspace?.engineDraft
+      const cfg = isEngineDraftUsable(draft) ? draft : settings.engineConfig
       const strategyId = cfg?.strategyId ?? status.strategyId ?? "wyckoff-spring"
       const strat = strategyCatalog.find((s) => s.id === strategyId)
       const params =
@@ -60,6 +70,7 @@ export const useEngineStore = create<EngineState>((set, get) => ({
           ? cfg.params
           : (strat?.defaultParams ?? {})
       const symbols = cfg?.symbols?.length ? cfg.symbols : [settings.defaultSymbol]
+      const interval = cfg?.interval ?? settings.defaultInterval
       const ensemble =
         cfg?.ensemble?.length
           ? cfg.ensemble
@@ -73,6 +84,7 @@ export const useEngineStore = create<EngineState>((set, get) => ({
         runningSymbols: status.runningSymbols,
         params,
         symbols,
+        interval,
         ensemble,
         error: null
       })
@@ -105,14 +117,29 @@ export const useEngineStore = create<EngineState>((set, get) => ({
 
   setEnsemble: (ensemble) => set({ ensemble }),
 
-  setSymbol: (symbol) => set({ symbols: [symbol.toUpperCase()] }),
+  setSymbol: (symbol) => set({ symbols: [normalizeSymbol(symbol) || DEFAULT_SYMBOL] }),
+
+  setInterval: (interval) => set({ interval }),
+
+  loadSetup: (setup) => {
+    set({
+      strategyId: setup.strategyId,
+      params: { ...setup.params },
+      symbols: setup.symbols.length ? [...setup.symbols] : get().symbols,
+      interval: setup.interval ?? get().interval,
+      ensemble: setup.ensemble?.length
+        ? setup.ensemble.map((m) => ({ ...m, params: { ...(m.params ?? {}) } }))
+        : get().ensemble,
+      error: null
+    })
+  },
 
   saveConfig: async () => {
     if (!window.api) {
       set({ error: "Not running in Electron — use the desktop app window." })
       return
     }
-    const { strategyId, params, symbols, ensemble } = get()
+    const { strategyId, params, symbols, interval, ensemble } = get()
     if (!strategyId) return
     try {
       await window.api.settings.set({
@@ -120,6 +147,7 @@ export const useEngineStore = create<EngineState>((set, get) => ({
           strategyId,
           params,
           symbols,
+          interval,
           ensemble: strategyId === ENSEMBLE_STRATEGY_ID ? ensemble : undefined
         }
       })
@@ -134,7 +162,7 @@ export const useEngineStore = create<EngineState>((set, get) => ({
       set({ error: "Not running in Electron — use the desktop app window." })
       return
     }
-    const { strategyId, params, symbols, ensemble } = get()
+    const { strategyId, params, symbols, interval, ensemble } = get()
     if (!strategyId) {
       set({ error: "Select a strategy first." })
       return
@@ -152,9 +180,18 @@ export const useEngineStore = create<EngineState>((set, get) => ({
         strategyId,
         params,
         symbols,
+        interval,
         ensemble: strategyId === ENSEMBLE_STRATEGY_ID ? ensemble : undefined
       })
       set({ ...status, error: null })
+      recordSetupAsync({
+        strategyId,
+        params,
+        symbols,
+        interval,
+        ensemble: strategyId === ENSEMBLE_STRATEGY_ID ? ensemble : undefined,
+        source: "armed"
+      })
     } catch (err) {
       set({ error: err instanceof Error ? err.message : "Failed to arm engine" })
     }

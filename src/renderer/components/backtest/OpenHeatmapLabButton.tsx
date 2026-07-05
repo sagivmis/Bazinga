@@ -2,7 +2,6 @@ import { Button } from "@mui/material"
 import GridOnIcon from "@mui/icons-material/GridOn"
 import type { EnsembleMemberConfig, StrategyParams } from "../../../shared/types"
 import type { HeatmapLabBootstrap } from "../../../shared/backtestSweepTypes"
-import { ENSEMBLE_STRATEGY_ID } from "../../../shared/ensembleUtils"
 
 interface OpenHeatmapLabButtonProps {
   strategyId: string
@@ -41,24 +40,15 @@ export default function OpenHeatmapLabButton({
     await window.api.heatmap.openLab()
   }
 
-  const isEnsemble = strategyId === ENSEMBLE_STRATEGY_ID
-  const enabledMembers = ensemble.filter((m) => m.enabled !== false).length
-
   return (
     <Button
       variant={variant}
       color="secondary"
       size={size}
       startIcon={<GridOnIcon />}
-      disabled={disabled || !isEnsemble || enabledMembers < 2}
+      disabled={disabled}
       onClick={() => void open()}
-      title={
-        !isEnsemble
-          ? "Select the weighted ensemble strategy first"
-          : enabledMembers < 2
-            ? "Need at least 2 enabled ensemble members"
-            : "Open Heatmap Lab in a dedicated window"
-      }
+      title="Open Heatmap Lab to sweep all tunable parameters"
     >
       Open Heatmap Lab
     </Button>

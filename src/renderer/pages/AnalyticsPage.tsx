@@ -2,7 +2,7 @@ import { useEffect } from "react"
 import { useBacktestStore } from "../stores/backtestStore"
 import { useOrdersStore } from "../stores/ordersStore"
 import { useAccountStore } from "../stores/accountStore"
-import { formatPct, formatUsd } from "../../shared/format"
+import { formatPct, formatUsd, resolveBacktestTotalPnl } from "../../shared/format"
 
 export default function AnalyticsPage() {
   const { latest, history, load } = useBacktestStore()
@@ -48,7 +48,22 @@ export default function AnalyticsPage() {
         <div className="panel" style={{ padding: 20 }}>
           <h3 style={{ marginTop: 0 }}>Latest Backtest — {latest?.symbol}</h3>
           <div className="portfolio-grid">
-            <div><span className="stat-label">Return</span><br /><strong className={btMetrics.totalReturn >= 0 ? "positive" : "negative"}>{formatPct(btMetrics.totalReturn)}</strong></div>
+            <div>
+              <span className="stat-label">Return</span>
+              <br />
+              <strong className={btMetrics.totalReturn >= 0 ? "positive" : "negative"}>
+                {formatPct(btMetrics.totalReturn)}
+              </strong>
+              <br />
+              <span
+                style={{ fontSize: 12 }}
+                className={
+                  resolveBacktestTotalPnl(btMetrics, latest?.equityCurve) >= 0 ? "positive" : "negative"
+                }
+              >
+                ${formatUsd(resolveBacktestTotalPnl(btMetrics, latest?.equityCurve))}
+              </span>
+            </div>
             <div><span className="stat-label">Win Rate</span><br /><strong>{btMetrics.winRate.toFixed(1)}%</strong></div>
             <div><span className="stat-label">Sharpe</span><br /><strong>{btMetrics.sharpeRatio.toFixed(2)}</strong></div>
             <div><span className="stat-label">Max DD</span><br /><strong className="negative">{btMetrics.maxDrawdown.toFixed(1)}%</strong></div>

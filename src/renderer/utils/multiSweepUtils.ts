@@ -1,28 +1,43 @@
-import type {
-  BacktestSweepCell,
-  EnsembleMultiSweepCell,
-  EnsembleMultiSweepResult
-} from "../../shared/types"
-import { compositeScore, metricValue, type HeatmapMetric } from "../../shared/sweepUtils"
+import type { BacktestSweepCell, BacktestResult } from "../../shared/types"
+import type { ParamSweepAxis } from "../../shared/backtestSweepTypes"
+import { metricValue, type HeatmapMetric } from "../../shared/sweepUtils"
 import type { HeatmapData } from "../components/backtest/ParamHeatmap"
 
-/** Project N-dimensional weight sweep onto a 2D heatmap (best cell per X/Y pair). */
-export function sliceMultiSweepToHeatmap(
-  result: EnsembleMultiSweepResult,
-  xStrategyId: string,
-  yStrategyId: string,
+export type LabSweepCell = {
+  values: Record<string, number>
+  params: import("../../shared/types").StrategyParams
+  ensemble?: import("../../shared/types").EnsembleMemberConfig[]
+  metrics: BacktestResult["metrics"]
+}
+
+export type LabSweepResult = {
+  axes: ParamSweepAxis[]
+  cells: LabSweepCell[]
+  bestCell: LabSweepCell
+}
+
+/** Project N-dimensional sweep onto a 2D heatmap (best cell per X/Y pair). */
+export function sliceLabSweepToHeatmap(
+  result: LabSweepResult,
+  xAxisKey: string,
+  yAxisKey: string,
   metric: HeatmapMetric,
-  nameById: Record<string, string>
+  labels: Record<string, string>,
+  depthAxisKey?: string,
+  depthValue?: number | null
 ): HeatmapData | null {
   if (!result.cells.length) return null
 
-  const xKey = `weight:${xStrategyId}`
-  const yKey = `weight:${yStrategyId}`
-  const merged = new Map<string, EnsembleMultiSweepCell>()
+  let pool = result.cells
+  if (depthAxisKey && depthValue != null) {
+    pool = pool.filter((c) => c.values[depthAxisKey] === depthValue)
+    if (!pool.length) return null
+  }
 
-  for (const cell of result.cells) {
-    const x = cell.weights[xStrategyId]
-    const y = cell.weights[yStrategyId]
+  const merged = new Map<string, LabSweepCell>()
+  for (const cell of pool) {
+    const x = cell.values[xAxisKey]
+    const y = cell.values[yAxisKey]
     if (x === undefined || y === undefined) continue
     const key = `${x}|${y}`
     const existing = merged.get(key)
@@ -34,8 +49,8 @@ export function sliceMultiSweepToHeatmap(
   if (!merged.size) return null
 
   const cells: BacktestSweepCell[] = [...merged.values()].map((cell) => ({
-    xValue: cell.weights[xStrategyId]!,
-    yValue: cell.weights[yStrategyId]!,
+    xValue: cell.values[xAxisKey]!,
+    yValue: cell.values[yAxisKey]!,
     params: cell.params,
     ensemble: cell.ensemble,
     metrics: cell.metrics
@@ -48,10 +63,10 @@ export function sliceMultiSweepToHeatmap(
   )
 
   return {
-    paramXKey: xKey,
-    paramYKey: yKey,
-    paramXLabel: nameById[xStrategyId] ?? xStrategyId,
-    paramYLabel: nameById[yStrategyId] ?? yStrategyId,
+    paramXKey: xAxisKey,
+    paramYKey: yAxisKey,
+    paramXLabel: labels[xAxisKey] ?? xAxisKey,
+    paramYLabel: labels[yAxisKey] ?? yAxisKey,
     xValues,
     yValues,
     cells,
@@ -60,11 +75,11 @@ export function sliceMultiSweepToHeatmap(
   }
 }
 
-export function sortMultiSweepCells(
-  cells: EnsembleMultiSweepCell[],
+export function sortLabSweepCells(
+  cells: LabSweepCell[],
   metric: HeatmapMetric,
   descending = true
-): EnsembleMultiSweepCell[] {
+): LabSweepCell[] {
   const dir = descending ? -1 : 1
   return [...cells].sort(
     (a, b) => dir * (metricValue(a.metrics, metric) - metricValue(b.metrics, metric))
@@ -77,4 +92,9 @@ export function formatWeightSummary(weights: Record<string, number>, nameById: R
     .join(" · ")
 }
 
-export { compositeScore }
+export function uniqueAxisValues(cells: LabSweepCell[], axisKey: string): number[] {
+  return [...new Set(cells.map((c) => c.values[axisKey]).filter((v) => v !== undefined))]
+    .sort((a, b) => a - b)
+}
+
+export { formatAxisValuesSummary } from "../../shared/paramSweepUtils"

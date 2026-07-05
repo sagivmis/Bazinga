@@ -14,14 +14,30 @@ export interface BacktestSweepRequest {
   paramY: { key: string; min: number; max: number; steps: number; label: string }
 }
 
-/** Per ensemble member weight axis for full grid sweep */
-export interface MemberWeightSweepAxis {
-  strategyId: string
+/** Per-axis config for full grid sweeps (strategy params or ensemble weights) */
+export interface ParamSweepAxis {
+  key: string
   label: string
   min: number
   max: number
   steps: number
   enabled: boolean
+}
+
+/** Per ensemble member weight axis for full grid sweep */
+export interface MemberWeightSweepAxis extends ParamSweepAxis {
+  strategyId: string
+}
+
+export interface StrategyParamMultiSweepRequest {
+  strategyId: string
+  symbol: string
+  interval: KlineInterval
+  startTime: number
+  endTime: number
+  baseParams: StrategyParams
+  initialBalance: number
+  paramAxes: ParamSweepAxis[]
 }
 
 export interface EnsembleMultiSweepRequest {
@@ -47,16 +63,23 @@ export interface HeatmapLabBootstrap {
 
 /** Pushed from Heatmap Lab → main app when user applies a cell */
 export interface HeatmapApplyPayload {
+  strategyId?: string
   params: StrategyParams
   ensemble: EnsembleMemberConfig[]
   metrics?: import("./types").BacktestResult["metrics"]
   weights?: Record<string, number>
+  paramValues?: Record<string, number>
   source: "heatmap-lab"
 }
 
 export const MAX_ENSEMBLE_SWEEP_RUNS = 2500
+export const MAX_PARAM_SWEEP_RUNS = MAX_ENSEMBLE_SWEEP_RUNS
 
 export function countEnsembleSweepRuns(axes: MemberWeightSweepAxis[]): number {
+  return countParamSweepRuns(axes)
+}
+
+export function countParamSweepRuns(axes: ParamSweepAxis[]): number {
   const enabled = axes.filter((a) => a.enabled && a.steps > 0)
   return enabled.reduce((product, a) => product * Math.max(1, a.steps), 1)
 }

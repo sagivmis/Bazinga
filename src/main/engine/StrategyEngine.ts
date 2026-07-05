@@ -1,5 +1,6 @@
 import type { Strategy } from "./Strategy"
 import type { StrategyParams, EngineStatus, Candle, EnsembleMemberConfig } from "../../shared/types"
+import type { KlineInterval } from "binance"
 import type { BinanceService } from "../services/BinanceService"
 import type { SettingsService } from "../services/SettingsService"
 import type { ResultsStore } from "../services/ResultsStore"
@@ -16,6 +17,7 @@ export class StrategyEngine {
   private strategyId: string | null = null
   private params: StrategyParams = {}
   private symbols: string[] = []
+  private interval: KlineInterval = "15m"
   private strategy: Strategy | null = null
   private ensemble: EnsembleMemberConfig[] = []
   private candleHistory: Record<string, Candle[]> = {}
@@ -31,7 +33,8 @@ export class StrategyEngine {
     return {
       armed: this.armed,
       strategyId: this.strategyId,
-      runningSymbols: this.symbols
+      runningSymbols: this.symbols,
+      interval: this.interval
     }
   }
 
@@ -44,7 +47,8 @@ export class StrategyEngine {
     strategyId: string,
     params: StrategyParams,
     symbols: string[],
-    ensemble?: EnsembleMemberConfig[]
+    ensemble?: EnsembleMemberConfig[],
+    interval?: KlineInterval
   ) {
     this.strategyId = strategyId
     this.params = params
@@ -55,10 +59,10 @@ export class StrategyEngine {
     this.candleHistory = {}
     this.barsSinceTrade = {}
 
-    const interval = this.settings.get().defaultInterval
+    this.interval = interval ?? this.settings.get().defaultInterval
     for (const symbol of symbols) {
-      this.binance.subscribeSymbol(symbol, interval)
-      const candles = await this.binance.getKlines(symbol, interval, 200)
+      this.binance.subscribeSymbol(symbol, this.interval)
+      const candles = await this.binance.getKlines(symbol, this.interval, 200)
       this.candleHistory[symbol] = candles
     }
     return this.getStatus()

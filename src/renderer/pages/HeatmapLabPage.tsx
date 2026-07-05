@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react"
 import {
   Alert,
   Button,
-  Checkbox,
   LinearProgress,
   Table,
   TableBody,
@@ -13,19 +12,14 @@ import {
   TableSortLabel
 } from "@mui/material"
 import type { KlineInterval } from "binance"
-import type {
-  EnsembleMemberConfig,
-  EnsembleMultiSweepCell,
-  EnsembleMultiSweepResult,
-  StrategyParams
-} from "../../shared/types"
-import type { MemberWeightSweepAxis, HeatmapApplyPayload } from "../../shared/backtestSweepTypes"
-import {
-  countEnsembleSweepRuns,
-  MAX_ENSEMBLE_SWEEP_RUNS
-} from "../../shared/backtestSweepTypes"
+import type { EnsembleMemberConfig, StrategyParams } from "../../shared/types"
+import type { ParamSweepAxis } from "../../shared/backtestSweepTypes"
+import { MAX_PARAM_SWEEP_RUNS, countParamSweepRuns } from "../../shared/backtestSweepTypes"
 import { defaultWeightAxes } from "../../shared/ensembleSweepUtils"
+import { defaultParamAxes, formatAxisValuesSummary } from "../../shared/paramSweepUtils"
 import { ENSEMBLE_STRATEGY_ID } from "../../shared/ensembleUtils"
+import { schemaWithoutLeverage } from "../../shared/leverageUtils"
+import type { ParamField } from "../../shared/sweepUtils"
 import {
   HEATMAP_METRICS,
   metricLabel,
@@ -33,32 +27,83 @@ import {
   type HeatmapMetric
 } from "../../shared/sweepUtils"
 import ParamHeatmap from "../components/backtest/ParamHeatmap"
+import SweepAxisPanel from "../components/backtest/SweepAxisPanel"
+import DepthProfile from "../components/backtest/DepthProfile"
 import { CompactField, FormGrid, FormRow, FormSection } from "../components/forms/CompactField"
+import SymbolField from "../components/forms/SymbolField"
 import {
   formatWeightSummary,
-  sliceMultiSweepToHeatmap,
-  sortMultiSweepCells
+  sliceLabSweepToHeatmap,
+  sortLabSweepCells,
+  uniqueAxisValues,
+  type LabSweepCell,
+  type LabSweepResult
 } from "../utils/multiSweepUtils"
 import { IPC } from "../../shared/ipc"
 import { cellToApplyPayload } from "../hooks/useHeatmapLabSync"
 import "../components/backtest/param-heatmap.css"
 import "./heatmap-lab.css"
 
-type StrategyMeta = { id: string; name: string }
+type StrategyMeta = {
+  id: string
+  name: string
+  params: ParamField[]
+}
+
+function toEnsembleLabResult(
+  result: import("../../shared/types").EnsembleMultiSweepResult
+): LabSweepResult {
+  return {
+    axes: result.weightAxes.map((a) => ({ ...a, key: a.strategyId ?? a.key })),
+    cells: result.cells.map((c) => ({
+      values: c.weights,
+      params: c.params,
+      ensemble: c.ensemble,
+      metrics: c.metrics
+    })),
+    bestCell: {
+      values: result.bestCell.weights,
+      params: result.bestCell.params,
+      ensemble: result.bestCell.ensemble,
+      metrics: result.bestCell.metrics
+    }
+  }
+}
+
+function toStrategyLabResult(
+  result: import("../../shared/types").StrategyParamMultiSweepResult
+): LabSweepResult {
+  return {
+    axes: result.paramAxes,
+    cells: result.cells.map((c) => ({
+      values: c.values,
+      params: c.params,
+      metrics: c.metrics
+    })),
+    bestCell: {
+      values: result.bestCell.values,
+      params: result.bestCell.params,
+      metrics: result.bestCell.metrics
+    }
+  }
+}
 
 export default function HeatmapLabPage() {
   const [strategies, setStrategies] = useState<StrategyMeta[]>([])
+  const [strategyId, setStrategyId] = useState("")
   const [symbol, setSymbol] = useState("BTCUSDT")
   const [interval, setInterval] = useState<KlineInterval>("4h")
   const [days, setDays] = useState(90)
   const [params, setParams] = useState<StrategyParams>({})
   const [ensemble, setEnsemble] = useState<EnsembleMemberConfig[]>([])
-  const [weightAxes, setWeightAxes] = useState<MemberWeightSweepAxis[]>([])
-  const [xMemberId, setXMemberId] = useState("")
-  const [yMemberId, setYMemberId] = useState("")
+  const [sweepAxes, setSweepAxes] = useState<ParamSweepAxis[]>([])
+  const [xAxisKey, setXAxisKey] = useState("")
+  const [yAxisKey, setYAxisKey] = useState("")
+  const [depthAxisKey, setDepthAxisKey] = useState("")
+  const [depthValue, setDepthValue] = useState<number | null>(null)
   const [heatmapMetric, setHeatmapMetric] = useState<HeatmapMetric>("score")
   const [tableMetric, setTableMetric] = useState<HeatmapMetric>("score")
-  const [result, setResult] = useState<EnsembleMultiSweepResult | null>(null)
+  const [labResult, setLabResult] = useState<LabSweepResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -66,86 +111,146 @@ export default function HeatmapLabPage() {
   const [appliedId, setAppliedId] = useState<string | null>(null)
   const [applyNotice, setApplyNotice] = useState<string | null>(null)
 
-  const nameById = useMemo(
-    () => Object.fromEntries(strategies.map((s) => [s.id, s.name])),
-    [strategies]
-  )
+  const isEnsemble = strategyId === ENSEMBLE_STRATEGY_ID
+  const selected = strategies.find((s) => s.id === strategyId)
 
-  const enabledAxes = weightAxes.filter((a) => a.enabled && a.steps > 0)
-  const totalRuns = countEnsembleSweepRuns(weightAxes)
-  const overLimit = totalRuns > MAX_ENSEMBLE_SWEEP_RUNS
+  const axisLabels = useMemo(() => {
+    const labels: Record<string, string> = {}
+    for (const a of sweepAxes) labels[a.key] = a.label
+    return labels
+  }, [sweepAxes])
+
+  const enabledAxes = sweepAxes.filter((a) => a.enabled && a.steps > 0)
+  const totalRuns = countParamSweepRuns(sweepAxes)
+  const overLimit = totalRuns > MAX_PARAM_SWEEP_RUNS
 
   useEffect(() => {
     if (!window.api) return
     void Promise.all([
       window.api.strategies.list(),
-      window.api.backtest.getLatestEnsembleMultiSweep?.(),
       window.api.heatmap.getBootstrap()
-    ]).then(([list, latest, bootstrap]) => {
-      const items = (list as StrategyMeta[]).filter((s) => s.id !== ENSEMBLE_STRATEGY_ID)
+    ]).then(([list, bootstrap]) => {
+      const items = list as StrategyMeta[]
       setStrategies(items)
 
-      if (bootstrap) {
-        setSymbol(bootstrap.symbol)
-        setInterval(bootstrap.interval)
-        setDays(bootstrap.days)
-        setParams(bootstrap.params)
-        setEnsemble(bootstrap.ensemble)
-        const axes = defaultWeightAxes(bootstrap.ensemble, Object.fromEntries(items.map((s) => [s.id, s.name])))
-        setWeightAxes(axes)
-        const enabled = bootstrap.ensemble.filter((m) => m.enabled !== false)
-        if (enabled.length >= 2) {
-          setXMemberId(enabled[0].strategyId)
-          setYMemberId(enabled[1].strategyId)
-        }
-      }
+      if (!bootstrap) return
 
-      if (latest) setResult(latest as EnsembleMultiSweepResult)
+      setStrategyId(bootstrap.strategyId)
+      setSymbol(bootstrap.symbol)
+      setInterval(bootstrap.interval)
+      setDays(bootstrap.days)
+      setParams(bootstrap.params)
+      setEnsemble(bootstrap.ensemble)
+
+      const nameById = Object.fromEntries(items.map((s) => [s.id, s.name]))
+      const isEns = bootstrap.strategyId === ENSEMBLE_STRATEGY_ID
+
+      if (isEns) {
+        const axes = defaultWeightAxes(bootstrap.ensemble, nameById)
+        setSweepAxes(axes)
+        const enabled = axes.filter((a) => a.enabled)
+        if (enabled.length >= 2) {
+          setXAxisKey(enabled[0].key)
+          setYAxisKey(enabled[1].key)
+        }
+        void window.api.backtest.getLatestEnsembleMultiSweep?.().then((latest) => {
+          if (latest) setLabResult(toEnsembleLabResult(latest))
+        })
+      } else {
+        const strat = items.find((s) => s.id === bootstrap.strategyId)
+        const schema = schemaWithoutLeverage(strat?.params ?? [])
+        const axes = defaultParamAxes(schema, bootstrap.params)
+        setSweepAxes(axes)
+        const enabled = axes.filter((a) => a.enabled)
+        if (enabled.length >= 2) {
+          setXAxisKey(enabled[0].key)
+          setYAxisKey(enabled[1].key)
+        } else if (enabled.length === 1) {
+          setXAxisKey(enabled[0].key)
+        }
+        void window.api.backtest.getLatestStrategyParamMultiSweep?.().then((latest) => {
+          if (latest && latest.strategyId === bootstrap.strategyId) {
+            setLabResult(toStrategyLabResult(latest))
+          }
+        })
+      }
     })
   }, [])
 
   useEffect(() => {
     if (!window.api) return
-    const unsubResult = window.api.on(IPC.EVENT_ENSEMBLE_MULTI_SWEEP, (_, data) => {
-      setResult(data as EnsembleMultiSweepResult)
+    const unsubEns = window.api.on(IPC.EVENT_ENSEMBLE_MULTI_SWEEP, (_, data) => {
+      setLabResult(toEnsembleLabResult(data as import("../../shared/types").EnsembleMultiSweepResult))
     })
-    const unsubProgress = window.api.on(IPC.EVENT_ENSEMBLE_MULTI_SWEEP_PROGRESS, (_, data) => {
-      const p = data as { done: number; total: number }
-      setProgress(p)
+    const unsubStrat = window.api.on(IPC.EVENT_STRATEGY_PARAM_MULTI_SWEEP, (_, data) => {
+      setLabResult(toStrategyLabResult(data as import("../../shared/types").StrategyParamMultiSweepResult))
+    })
+    const unsubEnsProg = window.api.on(IPC.EVENT_ENSEMBLE_MULTI_SWEEP_PROGRESS, (_, data) => {
+      setProgress(data as { done: number; total: number })
+    })
+    const unsubStratProg = window.api.on(IPC.EVENT_STRATEGY_PARAM_MULTI_SWEEP_PROGRESS, (_, data) => {
+      setProgress(data as { done: number; total: number })
     })
     return () => {
-      unsubResult?.()
-      unsubProgress?.()
+      unsubEns?.()
+      unsubStrat?.()
+      unsubEnsProg?.()
+      unsubStratProg?.()
     }
   }, [])
 
-  const updateAxis = (strategyId: string, patch: Partial<MemberWeightSweepAxis>) => {
-    setWeightAxes((prev) =>
-      prev.map((a) => (a.strategyId === strategyId ? { ...a, ...patch } : a))
-    )
-  }
+  const depthAxisOptions = useMemo(() => {
+    return enabledAxes.filter((a) => a.key !== xAxisKey && a.key !== yAxisKey)
+  }, [enabledAxes, xAxisKey, yAxisKey])
+
+  const depthValues = useMemo(() => {
+    if (!labResult || !depthAxisKey) return []
+    return uniqueAxisValues(labResult.cells, depthAxisKey)
+  }, [labResult, depthAxisKey])
+
+  useEffect(() => {
+    if (!depthAxisKey) {
+      setDepthValue(null)
+      return
+    }
+    if (depthValues.length && (depthValue == null || !depthValues.includes(depthValue))) {
+      setDepthValue(depthValues[0])
+    }
+  }, [depthAxisKey, depthValues, depthValue])
 
   const heatmapData = useMemo(() => {
-    if (!result || !xMemberId || !yMemberId || xMemberId === yMemberId) return null
-    return sliceMultiSweepToHeatmap(result, xMemberId, yMemberId, heatmapMetric, nameById)
-  }, [result, xMemberId, yMemberId, heatmapMetric, nameById])
+    if (!labResult || !xAxisKey || !yAxisKey || xAxisKey === yAxisKey) return null
+    return sliceLabSweepToHeatmap(
+      labResult,
+      xAxisKey,
+      yAxisKey,
+      heatmapMetric,
+      axisLabels,
+      depthAxisKey || undefined,
+      depthAxisKey ? depthValue : null
+    )
+  }, [labResult, xAxisKey, yAxisKey, heatmapMetric, axisLabels, depthAxisKey, depthValue])
 
   const sortedCells = useMemo(() => {
-    if (!result) return []
-    return sortMultiSweepCells(result.cells, tableMetric)
-  }, [result, tableMetric])
+    if (!labResult) return []
+    return sortLabSweepCells(labResult.cells, tableMetric)
+  }, [labResult, tableMetric])
 
   const runSweep = async () => {
-    if (!window.api?.backtest.ensembleMultiSweep) {
+    if (!window.api?.backtest) {
       setError("Not running in Electron.")
       return
     }
-    if (enabledAxes.length < 2) {
-      setError("Enable at least 2 member weight axes.")
+    if (enabledAxes.length < 1) {
+      setError("Enable at least 1 parameter axis.")
+      return
+    }
+    if (isEnsemble && enabledAxes.length < 2) {
+      setError("Ensemble sweeps need at least 2 enabled member weight axes.")
       return
     }
     if (overLimit) {
-      setError(`Too many combinations (${totalRuns}). Max is ${MAX_ENSEMBLE_SWEEP_RUNS}. Reduce steps or disable members.`)
+      setError(`Too many combinations (${totalRuns}). Max is ${MAX_PARAM_SWEEP_RUNS}. Reduce steps or disable axes.`)
       return
     }
 
@@ -155,52 +260,89 @@ export default function HeatmapLabPage() {
     try {
       const endTime = Date.now()
       const startTime = endTime - days * 86400000
-      const res = await window.api.backtest.ensembleMultiSweep({
-        symbol,
-        interval,
-        startTime,
-        endTime,
-        baseParams: params,
-        initialBalance: 10000,
-        ensemble,
-        weightAxes
-      })
-      setResult(res)
+
+      if (isEnsemble) {
+        await window.api.backtest.ensembleMultiSweep({
+          symbol,
+          interval,
+          startTime,
+          endTime,
+          baseParams: params,
+          initialBalance: 10000,
+          ensemble,
+          weightAxes: enabledAxes.map((a) => ({
+            key: a.key,
+            strategyId: a.key,
+            label: a.label,
+            min: a.min,
+            max: a.max,
+            steps: a.steps,
+            enabled: true
+          }))
+        })
+      } else {
+        await window.api.backtest.strategyParamMultiSweep({
+          strategyId,
+          symbol,
+          interval,
+          startTime,
+          endTime,
+          baseParams: params,
+          initialBalance: 10000,
+          paramAxes: sweepAxes
+        })
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Ensemble sweep failed")
+      setError(err instanceof Error ? err.message : "Sweep failed")
     } finally {
       setLoading(false)
       setProgress(null)
     }
   }
 
-  const applyCell = async (cell: EnsembleMultiSweepCell) => {
+  const applyCell = async (cell: LabSweepCell) => {
     if (!window.api?.heatmap?.apply) return
-    const payload = cellToApplyPayload(cell.params, cell.ensemble, cell.weights, cell.metrics)
+    const payload = cellToApplyPayload(
+      strategyId,
+      cell.params,
+      cell.ensemble ?? ensemble,
+      cell.values,
+      cell.metrics,
+      isEnsemble ? "ensemble" : "strategy"
+    )
     await window.api.heatmap.apply(payload)
-    setEnsemble(cell.ensemble.map((m) => ({ ...m, params: { ...m.params } })))
     setParams({ ...cell.params })
-    setAppliedId(JSON.stringify(cell.weights))
-    setApplyNotice(`Applied to main app — ${formatWeightSummary(cell.weights, nameById)}`)
+    if (cell.ensemble) setEnsemble(cell.ensemble.map((m) => ({ ...m, params: { ...m.params } })))
+    setAppliedId(JSON.stringify(cell.values))
+    const summary = isEnsemble
+      ? formatWeightSummary(cell.values, axisLabels)
+      : formatAxisValuesSummary(cell.values, axisLabels)
+    setApplyNotice(`Applied to main app — ${summary}`)
   }
 
   const applyHeatmapCell = async (cell: import("../../shared/types").BacktestSweepCell) => {
-    if (!cell.ensemble) return
-    const weights = Object.fromEntries(cell.ensemble.map((m) => [m.strategyId, m.weight]))
+    if (isEnsemble && cell.ensemble) {
+      await applyCell({
+        values: Object.fromEntries(cell.ensemble.map((m) => [m.strategyId, m.weight])),
+        params: cell.params,
+        ensemble: cell.ensemble,
+        metrics: cell.metrics
+      })
+      return
+    }
+    const values = Object.fromEntries(
+      enabledAxes.map((a) => [a.key, Number(cell.params[a.key] ?? 0)])
+    )
     await applyCell({
-      weights,
-      ensemble: cell.ensemble,
+      values,
       params: cell.params,
       metrics: cell.metrics
     })
   }
 
-  const cellKey = (cell: EnsembleMultiSweepCell) => JSON.stringify(cell.weights)
-
-  const memberOptions = enabledAxes.map((a) => ({
-    value: a.strategyId,
-    label: a.label
-  }))
+  const cellKey = (cell: LabSweepCell) => JSON.stringify(cell.values)
+  const axisOptions = enabledAxes.map((a) => ({ value: a.key, label: a.label }))
+  const strategyName = selected?.name ?? strategyId
 
   return (
     <div className="heatmap-lab">
@@ -208,8 +350,10 @@ export default function HeatmapLabPage() {
         <div>
           <h1>Heatmap Lab</h1>
           <p>
-            Full grid sweep across all ensemble member weights. One candle fetch — then{" "}
-            {totalRuns.toLocaleString()} local backtests.
+            {isEnsemble
+              ? `Full grid sweep of ensemble member weights for ${strategyName}.`
+              : `Full grid sweep of ${strategyName} tunable parameters.`}{" "}
+            One candle fetch — then {totalRuns.toLocaleString()} local backtests.
           </p>
         </div>
       </header>
@@ -228,8 +372,8 @@ export default function HeatmapLabPage() {
 
       {overLimit && (
         <Alert severity="warning" sx={{ mb: 2 }}>
-          {totalRuns.toLocaleString()} runs exceeds the limit of {MAX_ENSEMBLE_SWEEP_RUNS}. Lower
-          step counts or disable some members.
+          {totalRuns.toLocaleString()} runs exceeds the limit of {MAX_PARAM_SWEEP_RUNS}. Lower step
+          counts or disable some axes.
         </Alert>
       )}
 
@@ -237,7 +381,7 @@ export default function HeatmapLabPage() {
         <section className="panel heatmap-lab-panel">
           <FormSection title="Market & range">
             <FormRow>
-              <CompactField label="Symbol" value={symbol} onChange={(e) => setSymbol(e.target.value)} />
+              <SymbolField value={symbol} onChange={setSymbol} showQuickPicks={false} />
               <CompactField
                 select
                 label="Interval"
@@ -255,78 +399,14 @@ export default function HeatmapLabPage() {
           </FormSection>
 
           <FormSection
-            title="Member weight axes"
-            description="Min / max weight and number of steps (evenly spaced). Cartesian product across all enabled members."
+            title={isEnsemble ? "Member weight axes" : "Parameter axes"}
+            description="Toggle parameters to sweep, set min/max/steps per axis. All enabled axes combine in a full grid."
           >
-            <TableContainer className="weight-axis-table">
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell padding="checkbox">On</TableCell>
-                    <TableCell>Strategy</TableCell>
-                    <TableCell align="right">Min</TableCell>
-                    <TableCell align="right">Max</TableCell>
-                    <TableCell align="right">Steps</TableCell>
-                    <TableCell align="right">Step Δ</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {weightAxes.map((axis) => {
-                    const stepDelta =
-                      axis.steps <= 1 ? 0 : (axis.max - axis.min) / (axis.steps - 1)
-                    return (
-                      <TableRow key={axis.strategyId}>
-                        <TableCell padding="checkbox">
-                          <Checkbox
-                            size="small"
-                            checked={axis.enabled}
-                            onChange={(e) => updateAxis(axis.strategyId, { enabled: e.target.checked })}
-                          />
-                        </TableCell>
-                        <TableCell>{axis.label}</TableCell>
-                        <TableCell align="right">
-                          <input
-                            className="axis-num-input"
-                            type="number"
-                            value={axis.min}
-                            onChange={(e) =>
-                              updateAxis(axis.strategyId, { min: parseFloat(e.target.value) || 0 })
-                            }
-                          />
-                        </TableCell>
-                        <TableCell align="right">
-                          <input
-                            className="axis-num-input"
-                            type="number"
-                            value={axis.max}
-                            onChange={(e) =>
-                              updateAxis(axis.strategyId, { max: parseFloat(e.target.value) || 0 })
-                            }
-                          />
-                        </TableCell>
-                        <TableCell align="right">
-                          <input
-                            className="axis-num-input"
-                            type="number"
-                            min={2}
-                            max={20}
-                            value={axis.steps}
-                            onChange={(e) =>
-                              updateAxis(axis.strategyId, {
-                                steps: Math.max(2, parseInt(e.target.value) || 2)
-                              })
-                            }
-                          />
-                        </TableCell>
-                        <TableCell align="right" sx={{ color: "var(--text-muted)", fontSize: 12 }}>
-                          {stepDelta.toFixed(1)}
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <SweepAxisPanel
+              axes={sweepAxes}
+              onChange={setSweepAxes}
+              isEnsemble={isEnsemble}
+            />
 
             <p className="run-estimate">
               Total combinations: <strong>{totalRuns.toLocaleString()}</strong>
@@ -340,7 +420,7 @@ export default function HeatmapLabPage() {
             <Button
               variant="contained"
               color="primary"
-              disabled={loading || overLimit || enabledAxes.length < 2}
+              disabled={loading || overLimit || enabledAxes.length < 1}
               onClick={() => void runSweep()}
             >
               {loading
@@ -358,22 +438,45 @@ export default function HeatmapLabPage() {
         </section>
 
         <section className="panel heatmap-lab-panel heatmap-lab-viz">
-          <FormSection title="2D slice heatmap">
+          <FormSection title="3D slice heatmap">
+            <p className="heatmap-3d-hint">
+              Pick X and Y for the grid. Add a depth axis to slice through a third dimension — or leave
+              depth on &quot;None&quot; to show the best cell per X/Y across all other parameters.
+            </p>
             <FormGrid wide>
               <CompactField
                 select
-                label="X axis member"
-                value={xMemberId}
-                onChange={(e) => setXMemberId(e.target.value)}
-                options={memberOptions}
+                label="X axis"
+                value={xAxisKey}
+                onChange={(e) => setXAxisKey(e.target.value)}
+                options={axisOptions}
               />
               <CompactField
                 select
-                label="Y axis member"
-                value={yMemberId}
-                onChange={(e) => setYMemberId(e.target.value)}
-                options={memberOptions}
+                label="Y axis"
+                value={yAxisKey}
+                onChange={(e) => setYAxisKey(e.target.value)}
+                options={axisOptions}
               />
+              <CompactField
+                select
+                label="Depth axis"
+                value={depthAxisKey}
+                onChange={(e) => setDepthAxisKey(e.target.value)}
+                options={[
+                  { value: "", label: "None (best over all)" },
+                  ...depthAxisOptions.map((a) => ({ value: a.key, label: a.label }))
+                ]}
+              />
+              {depthAxisKey && depthValues.length > 0 && (
+                <CompactField
+                  select
+                  label={`Depth = ${axisLabels[depthAxisKey] ?? depthAxisKey}`}
+                  value={String(depthValue ?? depthValues[0])}
+                  onChange={(e) => setDepthValue(parseFloat(e.target.value))}
+                  options={depthValues.map((v) => ({ value: String(v), label: String(v) }))}
+                />
+              )}
               <CompactField
                 select
                 label="Color by"
@@ -383,28 +486,42 @@ export default function HeatmapLabPage() {
               />
             </FormGrid>
             <p className="slice-hint">
-              Other member weights vary — each cell shows the best result for that X/Y pair.
+              {depthAxisKey && depthValue != null
+                ? `Showing slice where ${axisLabels[depthAxisKey] ?? depthAxisKey} = ${depthValue}. Other axes still pick the best cell per X/Y.`
+                : "Other axes vary — each cell shows the best result for that X/Y pair."}
             </p>
             <ParamHeatmap
               data={heatmapData}
               metric={heatmapMetric}
               onSelectCell={(cell) => void applyHeatmapCell(cell)}
             />
+            {labResult && depthAxisKey && (
+              <DepthProfile
+                result={labResult}
+                depthAxisKey={depthAxisKey}
+                depthValue={depthValue}
+                metric={heatmapMetric}
+                labels={axisLabels}
+                onSelectDepth={setDepthValue}
+              />
+            )}
           </FormSection>
 
-          {result?.bestCell && (
+          {labResult?.bestCell && (
             <div className="heatmap-best panel" style={{ padding: 12, marginTop: 12 }}>
               <strong style={{ color: "var(--accent-teal)" }}>Best overall</strong>
               <span style={{ marginLeft: 8, color: "var(--text-muted)", fontSize: 13 }}>
-                {formatWeightSummary(result.bestCell.weights, nameById)} · Return{" "}
-                {result.bestCell.metrics.totalReturn.toFixed(2)}% ·{" "}
-                {result.bestCell.metrics.totalTrades} trades · Score{" "}
-                {metricLabel("score", metricValue(result.bestCell.metrics, "score"))}
+                {isEnsemble
+                  ? formatWeightSummary(labResult.bestCell.values, axisLabels)
+                  : formatAxisValuesSummary(labResult.bestCell.values, axisLabels)}{" "}
+                · Return {labResult.bestCell.metrics.totalReturn.toFixed(2)}% ·{" "}
+                {labResult.bestCell.metrics.totalTrades} trades · Score{" "}
+                {metricLabel("score", metricValue(labResult.bestCell.metrics, "score"))}
               </span>
               <button
                 type="button"
                 className="heatmap-apply-btn"
-                onClick={() => void applyCell(result.bestCell)}
+                onClick={() => void applyCell(labResult.bestCell)}
               >
                 Apply to main app
               </button>
@@ -413,11 +530,11 @@ export default function HeatmapLabPage() {
         </section>
       </div>
 
-      {result && (
+      {labResult && (
         <section className="panel heatmap-lab-results">
           <FormSection
-            title={`All results (${result.cells.length.toLocaleString()} cells)`}
-            description="Sorted by selected metric. Scroll for full grid output."
+            title={`All results (${labResult.cells.length.toLocaleString()} cells)`}
+            description="Sorted by selected metric. Click a row to apply."
           >
             <FormRow>
               <CompactField
@@ -448,16 +565,15 @@ export default function HeatmapLabPage() {
                   <TableRow>
                     <TableCell>#</TableCell>
                     {enabledAxes.map((a) => (
-                      <TableCell key={a.strategyId} align="right">
+                      <TableCell key={a.key} align="right">
                         <TableSortLabel active direction="desc">
-                          {a.label} wt
+                          {a.label}
                         </TableSortLabel>
                       </TableCell>
                     ))}
                     <TableCell align="right">Return %</TableCell>
+                    <TableCell align="right">P&amp;L $</TableCell>
                     <TableCell align="right">Trades</TableCell>
-                    <TableCell align="right">Avg P&L</TableCell>
-                    <TableCell align="right">PF</TableCell>
                     <TableCell align="right">Score</TableCell>
                     <TableCell align="right">Apply</TableCell>
                   </TableRow>
@@ -473,8 +589,8 @@ export default function HeatmapLabPage() {
                     >
                       <TableCell>{i + 1}</TableCell>
                       {enabledAxes.map((a) => (
-                        <TableCell key={a.strategyId} align="right">
-                          {cell.weights[a.strategyId] ?? "—"}
+                        <TableCell key={a.key} align="right">
+                          {cell.values[a.key] ?? "—"}
                         </TableCell>
                       ))}
                       <TableCell
@@ -483,9 +599,13 @@ export default function HeatmapLabPage() {
                       >
                         {cell.metrics.totalReturn.toFixed(2)}
                       </TableCell>
+                      <TableCell
+                        align="right"
+                        className={(cell.metrics.totalPnl ?? 0) >= 0 ? "positive" : "negative"}
+                      >
+                        {(cell.metrics.totalPnl ?? 0).toFixed(2)}
+                      </TableCell>
                       <TableCell align="right">{cell.metrics.totalTrades}</TableCell>
-                      <TableCell align="right">{cell.metrics.avgPnlPerTrade.toFixed(2)}</TableCell>
-                      <TableCell align="right">{cell.metrics.profitFactor.toFixed(2)}</TableCell>
                       <TableCell align="right">
                         {metricLabel("score", metricValue(cell.metrics, "score"))}
                       </TableCell>

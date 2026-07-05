@@ -1,0 +1,166 @@
+.setup-library {
+  margin-bottom: 20px;
+}
+
+.setup-library-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border, #1e293b);
+  padding-bottom: 0;
+}
+
+.setup-library-tab {
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.setup-library-tab.active {
+  color: var(--accent-teal, #00e5c3);
+  border-bottom-color: var(--accent-teal, #00e5c3);
+}
+
+.setup-save-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  align-items: flex-start;
+}
+
+.setup-save-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border, #1e293b);
+  background: #111827;
+  color: var(--text, #e2e8f0);
+  font-size: 13px;
+}
+
+.setup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.setup-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border, #1e293b);
+  background: var(--bg-elevated, #1a2235);
+  text-align: left;
+  transition: border-color 0.15s;
+}
+
+.setup-card:hover {
+  border-color: rgba(0, 229, 195, 0.3);
+}
+
+.setup-card.favorite {
+  border-color: rgba(255, 193, 7, 0.35);
+}
+
+.setup-card-main {
+  min-width: 0;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+}
+
+.setup-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text, #e2e8f0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.setup-card-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.setup-source-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(0, 229, 195, 0.12);
+  color: var(--accent-teal, #00e5c3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.setup-card-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  align-items: center;
+  align-self: center;
+}
+
+.setup-icon-btn {
+  width: 32px !important;
+  height: 32px !important;
+  border: 1px solid var(--border, #334155) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: var(--text, #cbd5e1) !important;
+  border-radius: 6px !important;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.setup-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: #f1f5f9 !important;
+}
+
+.setup-icon-btn.favorite-btn.active {
+  background: rgba(255, 193, 7, 0.15) !important;
+  border-color: rgba(255, 193, 7, 0.55) !important;
+  color: #ffc107 !important;
+}
+
+.setup-icon-btn.favorite-btn.active:hover {
+  background: rgba(255, 193, 7, 0.25) !important;
+  border-color: #ffc107 !important;
+}
+
+.setup-icon-btn.favorite-btn:not(.active):hover {
+  border-color: rgba(255, 193, 7, 0.45) !important;
+  color: #ffc107 !important;
+}
+
+.setup-icon-btn.remove-btn:hover {
+  background: rgba(244, 67, 54, 0.15) !important;
+  border-color: rgba(244, 67, 54, 0.55) !important;
+  color: #ff6b6b !important;
+}
+
+.setup-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 16px 0;
+  text-align: center;
+}

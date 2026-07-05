@@ -2,14 +2,17 @@ import { contextBridge, ipcRenderer } from "electron"
 import { IPC } from "../shared/ipc"
 import type {
   AppSettings,
+  AlgoSetup,
+  AlgoSetupInput,
   BacktestRequest,
   BacktestResult,
   BacktestSweepResult,
   EnsembleMultiSweepResult,
+  StrategyParamMultiSweepResult,
   OrderIntent,
   StrategyParams
 } from "../shared/types"
-import type { BacktestSweepRequest, EnsembleMultiSweepRequest, HeatmapApplyPayload, HeatmapLabBootstrap } from "../shared/backtestSweepTypes"
+import type { BacktestSweepRequest, EnsembleMultiSweepRequest, HeatmapApplyPayload, HeatmapLabBootstrap, StrategyParamMultiSweepRequest } from "../shared/backtestSweepTypes"
 import type { KlineInterval } from "binance"
 
 const api = {
@@ -65,6 +68,7 @@ const api = {
       strategyId: string
       params: StrategyParams
       symbols: string[]
+      interval?: KlineInterval
       ensemble?: import("../shared/types").EnsembleMemberConfig[]
     }) => ipcRenderer.invoke(IPC.ENGINE_ARM, args),
     disarm: () => ipcRenderer.invoke(IPC.ENGINE_DISARM),
@@ -86,7 +90,11 @@ const api = {
     ensembleMultiSweep: (req: EnsembleMultiSweepRequest): Promise<EnsembleMultiSweepResult> =>
       ipcRenderer.invoke(IPC.BACKTEST_ENSEMBLE_MULTI_SWEEP, req),
     getLatestEnsembleMultiSweep: (): Promise<EnsembleMultiSweepResult | null> =>
-      ipcRenderer.invoke(IPC.BACKTEST_GET_LATEST_ENSEMBLE_MULTI_SWEEP)
+      ipcRenderer.invoke(IPC.BACKTEST_GET_LATEST_ENSEMBLE_MULTI_SWEEP),
+    strategyParamMultiSweep: (req: StrategyParamMultiSweepRequest): Promise<StrategyParamMultiSweepResult> =>
+      ipcRenderer.invoke(IPC.BACKTEST_STRATEGY_PARAM_MULTI_SWEEP, req),
+    getLatestStrategyParamMultiSweep: (): Promise<StrategyParamMultiSweepResult | null> =>
+      ipcRenderer.invoke(IPC.BACKTEST_GET_LATEST_STRATEGY_PARAM_MULTI_SWEEP)
   },
   heatmap: {
     setBootstrap: (config: HeatmapLabBootstrap): Promise<void> =>
@@ -96,6 +104,25 @@ const api = {
     openLab: (): Promise<void> => ipcRenderer.invoke(IPC.HEATMAP_OPEN_LAB),
     apply: (payload: HeatmapApplyPayload): Promise<void> =>
       ipcRenderer.invoke(IPC.HEATMAP_APPLY, payload)
+  },
+  setups: {
+    list: (): Promise<{ recent: AlgoSetup[]; saved: AlgoSetup[] }> =>
+      ipcRenderer.invoke(IPC.SETUPS_LIST),
+    record: (input: AlgoSetupInput): Promise<AlgoSetup> =>
+      ipcRenderer.invoke(IPC.SETUPS_RECORD, input),
+    save: (args: AlgoSetupInput & { name: string }): Promise<AlgoSetup> =>
+      ipcRenderer.invoke(IPC.SETUPS_SAVE, args),
+    touch: (id: string): Promise<AlgoSetup | null> =>
+      ipcRenderer.invoke(IPC.SETUPS_TOUCH, id),
+    toggleFavorite: (id: string): Promise<AlgoSetup | null> =>
+      ipcRenderer.invoke(IPC.SETUPS_TOGGLE_FAVORITE, id),
+    remove: (id: string): Promise<boolean> => ipcRenderer.invoke(IPC.SETUPS_REMOVE, id)
+  },
+  workspace: {
+    get: (): Promise<import("../shared/types").AppWorkspace> =>
+      ipcRenderer.invoke(IPC.WORKSPACE_GET),
+    patch: (partial: Partial<import("../shared/types").AppWorkspace>) =>
+      ipcRenderer.invoke(IPC.WORKSPACE_PATCH, partial)
   },
   on: (channel: string, listener: (_: unknown, data: unknown) => void) => {
     const allowed = Object.values(IPC).filter((c) => c.startsWith("event:"))

@@ -50,11 +50,25 @@ export const IPC = {
   BACKTEST_GET_LATEST_SWEEP: "backtest:getLatestSweep",
   BACKTEST_ENSEMBLE_MULTI_SWEEP: "backtest:ensembleMultiSweep",
   BACKTEST_GET_LATEST_ENSEMBLE_MULTI_SWEEP: "backtest:getLatestEnsembleMultiSweep",
+  BACKTEST_STRATEGY_PARAM_MULTI_SWEEP: "backtest:strategyParamMultiSweep",
+  BACKTEST_GET_LATEST_STRATEGY_PARAM_MULTI_SWEEP: "backtest:getLatestStrategyParamMultiSweep",
 
   HEATMAP_OPEN_LAB: "heatmap:openLab",
   HEATMAP_SET_BOOTSTRAP: "heatmap:setBootstrap",
   HEATMAP_GET_BOOTSTRAP: "heatmap:getBootstrap",
   HEATMAP_APPLY: "heatmap:apply",
+
+  // Algo setup library
+  SETUPS_LIST: "setups:list",
+  SETUPS_RECORD: "setups:record",
+  SETUPS_SAVE: "setups:save",
+  SETUPS_TOUCH: "setups:touch",
+  SETUPS_TOGGLE_FAVORITE: "setups:toggleFavorite",
+  SETUPS_REMOVE: "setups:remove",
+
+  // Workspace (session restore)
+  WORKSPACE_GET: "workspace:get",
+  WORKSPACE_PATCH: "workspace:patch",
 
   // Push events (main -> renderer)
   EVENT_PRICE: "event:price",
@@ -69,6 +83,8 @@ export const IPC = {
   EVENT_BACKTEST_SWEEP_PROGRESS: "event:backtestSweepProgress",
   EVENT_ENSEMBLE_MULTI_SWEEP: "event:ensembleMultiSweep",
   EVENT_ENSEMBLE_MULTI_SWEEP_PROGRESS: "event:ensembleMultiSweepProgress",
+  EVENT_STRATEGY_PARAM_MULTI_SWEEP: "event:strategyParamMultiSweep",
+  EVENT_STRATEGY_PARAM_MULTI_SWEEP_PROGRESS: "event:strategyParamMultiSweepProgress",
   EVENT_HEATMAP_APPLY: "event:heatmapApply"
 } as const
 

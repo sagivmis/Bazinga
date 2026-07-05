@@ -3,6 +3,7 @@ import type {
   BacktestResult,
   BacktestSweepResult,
   EnsembleMultiSweepResult,
+  StrategyParamMultiSweepResult,
   TradeRecord
 } from "../../shared/types"
 
@@ -10,13 +11,20 @@ interface StoreSchema {
   backtests: BacktestResult[]
   sweeps: BacktestSweepResult[]
   ensembleMultiSweeps: EnsembleMultiSweepResult[]
+  strategyParamMultiSweeps: StrategyParamMultiSweepResult[]
   trades: TradeRecord[]
 }
 
 export class ResultsStore {
   private store = new Store<StoreSchema>({
     name: "bazinga-results",
-    defaults: { backtests: [], sweeps: [], ensembleMultiSweeps: [], trades: [] }
+    defaults: {
+      backtests: [],
+      sweeps: [],
+      ensembleMultiSweeps: [],
+      strategyParamMultiSweeps: [],
+      trades: []
+    }
   })
 
   saveBacktest(result: BacktestResult) {
@@ -56,6 +64,15 @@ export class ResultsStore {
 
   getLatestEnsembleMultiSweep() {
     return (this.store.get("ensembleMultiSweeps") ?? [])[0] ?? null
+  }
+
+  saveStrategyParamMultiSweep(result: StrategyParamMultiSweepResult) {
+    const list = this.store.get("strategyParamMultiSweeps") ?? []
+    this.store.set("strategyParamMultiSweeps", [result, ...list].slice(0, 10))
+  }
+
+  getLatestStrategyParamMultiSweep() {
+    return (this.store.get("strategyParamMultiSweeps") ?? [])[0] ?? null
   }
 
   logTrade(trade: TradeRecord) {

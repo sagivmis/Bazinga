@@ -1,0 +1,200 @@
+.sweep-axis-panel {
+  margin-top: 8px;
+}
+
+.sweep-axis-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.sweep-axis-summary {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.sweep-axis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.sweep-axis-card {
+  border: 1px solid var(--border, #1e293b);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--bg-elevated, #1a2235);
+  opacity: 0.65;
+  transition: opacity 0.15s, border-color 0.15s;
+}
+
+.sweep-axis-card.enabled {
+  opacity: 1;
+  border-color: rgba(0, 229, 195, 0.35);
+}
+
+.sweep-axis-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.sweep-axis-card-head .MuiFormControlLabel-root {
+  margin: 0;
+  align-items: flex-start;
+}
+
+.sweep-axis-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text, #e2e8f0);
+}
+
+.sweep-axis-key {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: ui-monospace, monospace;
+}
+
+.sweep-axis-fields {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.sweep-axis-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.sweep-axis-fields input {
+  width: 100%;
+  padding: 4px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border, #1e293b);
+  background: #111827;
+  color: var(--text, #e2e8f0);
+  font-size: 12px;
+}
+
+.sweep-axis-fields input:disabled {
+  opacity: 0.45;
+}
+
+.sweep-axis-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.step-delta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.step-presets {
+  display: flex;
+  gap: 4px;
+}
+
+.step-presets button {
+  padding: 2px 7px;
+  font-size: 10px;
+  border-radius: 4px;
+  border: 1px solid var(--border, #1e293b);
+  background: #111827;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.step-presets button:hover:not(:disabled) {
+  border-color: var(--accent-teal, #00e5c3);
+  color: var(--accent-teal, #00e5c3);
+}
+
+.step-presets button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Depth profile */
+.depth-profile {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border, #1e293b);
+}
+
+.depth-profile-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+}
+
+.depth-profile-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.depth-bar-row {
+  display: grid;
+  grid-template-columns: 100px 1fr 52px;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  background: none;
+  border: none;
+  padding: 2px 0;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+
+.depth-bar-label {
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.depth-bar-track {
+  height: 18px;
+  background: #111827;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.depth-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  min-width: 2px;
+  transition: width 0.2s;
+}
+
+.depth-bar-value {
+  text-align: right;
+  font-weight: 600;
+  font-size: 10px;
+  color: var(--text, #e2e8f0);
+}
+
+.depth-bar-row.active .depth-bar-label {
+  color: var(--accent-teal, #00e5c3);
+}
+
+.heatmap-3d-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+}

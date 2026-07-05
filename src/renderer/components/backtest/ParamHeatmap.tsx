@@ -184,7 +184,7 @@ export default function ParamHeatmap({ data, metric, onSelectCell }: ParamHeatma
                   type="button"
                   className={`heatmap-cell${best ? " best" : ""}`}
                   style={{ background: cellColor(val, min, max, metric) }}
-                  title={`${data.paramXLabel}: ${x}, ${data.paramYLabel}: ${y}\nReturn: ${cell.metrics.totalReturn.toFixed(2)}%\nTrades: ${cell.metrics.totalTrades}\nAvg P&L: $${cell.metrics.avgPnlPerTrade.toFixed(2)}\nPF: ${cell.metrics.profitFactor.toFixed(2)}`}
+                  title={`${data.paramXLabel}: ${x}, ${data.paramYLabel}: ${y}\nReturn: ${cell.metrics.totalReturn.toFixed(2)}% ($${(cell.metrics.totalPnl ?? 0).toFixed(2)})\nTrades: ${cell.metrics.totalTrades}\nAvg P&L: $${cell.metrics.avgPnlPerTrade.toFixed(2)}\nPF: ${cell.metrics.profitFactor.toFixed(2)}`}
                   onClick={() => onSelectCell?.(cell)}
                 >
                   <span className="cell-value">{metricLabel(metric, val)}</span>
@@ -203,7 +203,8 @@ export default function ParamHeatmap({ data, metric, onSelectCell }: ParamHeatma
           <strong style={{ color: "var(--accent-teal)" }}>Best cell</strong>
           <span style={{ marginLeft: 8, color: "var(--text-muted)", fontSize: 13 }}>
             {data.paramXLabel}={data.bestCell.xValue}, {data.paramYLabel}={data.bestCell.yValue} ·{" "}
-            Return {data.bestCell.metrics.totalReturn.toFixed(2)}% · {data.bestCell.metrics.totalTrades}{" "}
+            Return {data.bestCell.metrics.totalReturn.toFixed(2)}% (${(data.bestCell.metrics.totalPnl ?? 0).toFixed(2)}) ·{" "}
+            {data.bestCell.metrics.totalTrades}{" "}
             trades · Avg {metricLabel("avgPnlPerTrade", data.bestCell.metrics.avgPnlPerTrade)}
           </span>
           {onSelectCell && (

@@ -50,6 +50,9 @@ Keep signal logic pure and shared between both paths.
 | `wyckoff-breakout` | Tight range consolidation then markup/markdown break |
 | `high-volume-trend` | EMA trend + low-volume pullback + high-volume entry |
 | `ema-vwma-cross` | Original crossover baseline |
+| `rsi-scalper` | **High frequency** — fast RSI mean-reversion, tight SL/TP, zero cooldown |
+| `bb-bounce` | **High frequency** — Bollinger band pierce-and-reject in ranging markets |
+| `stoch-momentum` | **High frequency** — fast stochastic crosses in OB/OS zones |
 | `strategy-ensemble` | **Weighted combination** of any strategies above |
 
 ### Weighted Ensemble
@@ -61,6 +64,8 @@ Default ensemble: Wyckoff Spring (40) + Volume Breakout (35) + High Volume Trend
 Heatmap axes include **Weight: StrategyName** for each member, plus threshold and cooldown.
 
 Tune **Cooldown Bars**, **volume multiplier**, and **4h/1d** intervals in Backtest to optimize for fewer, higher-quality trades. Compare **Avg P&amp;L / Trade** alongside total return.
+
+For **many trades per day**, use `rsi-scalper`, `bb-bounce`, or `stoch-momentum` on **15m** or **1h** intervals with cooldown 0–1 and tight stop/take profit (0.6–1.2%). These target frequent round-trips rather than swing holds.
 
 Use **Backtest → Parameter Heatmap → Run Parameter Sweep** to grid-search two params at once (e.g. volume multiplier vs cooldown). Candles are fetched once; simulations run locally. Click a cell to apply those params.
 

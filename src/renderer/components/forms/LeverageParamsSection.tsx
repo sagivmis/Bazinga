@@ -1,4 +1,5 @@
 import { FormSection, CompactField, FormRow } from "./CompactField"
+import LeverageSlider from "./LeverageSlider"
 import type { StrategyParams } from "../../shared/types"
 import {
   clampLeverage,
@@ -7,7 +8,6 @@ import {
   MAX_LEVERAGE,
   MIN_LEVERAGE
 } from "../../../shared/leverageUtils"
-import { Slider, Typography } from "@mui/material"
 
 interface LeverageParamsSectionProps {
   params: StrategyParams
@@ -38,18 +38,20 @@ export function LeverageParamsSection({ params, onChange }: LeverageParamsSectio
             { value: "range", label: "Min / Max range" }
           ]}
         />
-        {mode === "fixed" ? (
-          <CompactField
-            className="field-sm"
-            label="Leverage"
-            type="number"
-            value={leverage}
-            disabled
-            title="Fixed leverage — change mode to Range to adjust"
-            inputProps={{ min: MIN_LEVERAGE, max: MAX_LEVERAGE }}
-          />
-        ) : (
-          <>
+      </FormRow>
+
+      {mode === "fixed" ? (
+        <LeverageSlider
+          label="Leverage"
+          value={leverage}
+          min={MIN_LEVERAGE}
+          max={MAX_LEVERAGE}
+          onChange={(v) => onChange({ ...params, leverage: v })}
+          helperText="Fixed leverage for this strategy."
+        />
+      ) : (
+        <>
+          <FormRow>
             <CompactField
               className="field-sm"
               label="Min"
@@ -70,41 +72,22 @@ export function LeverageParamsSection({ params, onChange }: LeverageParamsSectio
               }
               inputProps={{ min: MIN_LEVERAGE, max: MAX_LEVERAGE }}
             />
-          </>
-        )}
-      </FormRow>
-
-      {mode === "range" && (
-        <div style={{ marginTop: 8, maxWidth: 280 }}>
-          <Typography variant="caption" sx={{ color: "var(--text-muted)" }}>
-            Active leverage: {leverage}x (within {range.min}–{range.max})
-          </Typography>
-          <Slider
-            size="small"
+          </FormRow>
+          <LeverageSlider
+            label="Active leverage"
             value={Math.min(Math.max(leverage, range.min), range.max)}
             min={range.min}
             max={range.max}
-            step={1}
-            marks={[
-              { value: range.min, label: `${range.min}x` },
-              { value: range.max, label: `${range.max}x` }
-            ]}
-            onChange={(_, v) => onChange({ ...params, leverage: v as number })}
-            sx={{ mt: 0.5 }}
+            onChange={(v) => onChange({ ...params, leverage: v })}
+            helperText={`Adjustable within ${range.min}x–${range.max}x.`}
           />
-        </div>
-      )}
-
-      {mode === "fixed" && (
-        <Typography variant="caption" sx={{ color: "var(--text-muted)", display: "block", mt: 0.5 }}>
-          Fixed at {leverage}x — switch to Range to allow adjustment within bounds.
-        </Typography>
+        </>
       )}
     </FormSection>
   )
 }
 
-/** Compact leverage control for order entry (local session only) */
+/** Compact leverage slider for order entry (local session only) */
 export function OrderLeverageControl({
   leverage,
   onChange
@@ -114,24 +97,12 @@ export function OrderLeverageControl({
   onChange: (n: number) => void
 }) {
   return (
-    <div style={{ marginBottom: 4 }}>
-      <FormRow>
-        <CompactField
-          className="field-sm"
-          label={`Leverage`}
-          type="number"
-          value={leverage}
-          onChange={(e) => onChange(clampLeverage(parseFloat(e.target.value) || 1))}
-          inputProps={{ min: MIN_LEVERAGE, max: MAX_LEVERAGE, step: 1 }}
-        />
-      </FormRow>
-      <div className="leverage-presets">
-        {[5, 10, 20, 50, 100].map((n) => (
-          <button key={n} type="button" onClick={() => onChange(n)}>
-            {n}x
-          </button>
-        ))}
-      </div>
-    </div>
+    <LeverageSlider
+      compact
+      label="Leverage"
+      value={leverage}
+      onChange={onChange}
+      helperText="Session-only — default in Settings."
+    />
   )
 }

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { Alert, Button } from "@mui/material"
 import { useEngineStore } from "../stores/engineStore"
 import { useBacktestStore } from "../stores/backtestStore"
-import type { EnsembleMemberConfig, StrategyParams } from "../../shared/types"
+import type { AlgoSetup, AlgoSetupInput, EnsembleMemberConfig, StrategyParams } from "../../shared/types"
 import type { HeatmapApplyPayload } from "../../shared/backtestSweepTypes"
 import { useHeatmapLabSync } from "../hooks/useHeatmapLabSync"
 import { ENSEMBLE_STRATEGY_ID } from "../../shared/ensembleUtils"
@@ -10,6 +10,9 @@ import { schemaWithoutLeverage } from "../../shared/leverageUtils"
 import EnsembleBuilder from "../components/ensemble/EnsembleBuilder"
 import ParameterHeatmapPanel from "../components/backtest/ParameterHeatmapPanel"
 import OpenHeatmapLabButton from "../components/backtest/OpenHeatmapLabButton"
+import SetupLibraryPanel from "../components/algo/SetupLibraryPanel"
+import { recordSetupAsync } from "../stores/setupLibraryStore"
+import { persistAlgoBuilderDraft, useWorkspaceStore } from "../stores/workspaceStore"
 import { LeverageParamsSection } from "../components/forms/LeverageParamsSection"
 import {
   CompactField,
@@ -18,6 +21,7 @@ import {
   FormSection,
   StrategyParamsGrid
 } from "../components/forms/CompactField"
+import SymbolField from "../components/forms/SymbolField"
 
 type StrategyMeta = {
   id: string
@@ -35,6 +39,8 @@ export default function AlgoBuilderPage() {
     setStrategyId,
     symbols,
     setSymbol,
+    interval,
+    setInterval,
     ensemble,
     setEnsemble,
     armed,
@@ -42,14 +48,21 @@ export default function AlgoBuilderPage() {
     error,
     saveConfig,
     armEngine,
-    disarmEngine
+    disarmEngine,
+    loadSetup
   } = useEngineStore()
   const { history, load } = useBacktestStore()
   const [strategies, setStrategies] = useState<StrategyMeta[]>([])
   const [sweepResult, setSweepResult] = useState<import("../../shared/types").BacktestSweepResult | null>(null)
   const [labApplied, setLabApplied] = useState<HeatmapApplyPayload | null>(null)
-  const [heatmapInterval, setHeatmapInterval] = useState("4h")
-  const [heatmapDays, setHeatmapDays] = useState(90)
+  const workspaceHeatmapDays = useWorkspaceStore((s) => s.workspace?.algoBuilder?.heatmapDays)
+  const [heatmapDays, setHeatmapDaysState] = useState(90)
+  const [workspaceReady, setWorkspaceReady] = useState(false)
+
+  const setHeatmapDays = (days: number) => {
+    setHeatmapDaysState(days)
+    persistAlgoBuilderDraft({ heatmapDays: days })
+  }
 
   const isEnsemble = strategyId === ENSEMBLE_STRATEGY_ID
   const baseStrategies = useMemo(
@@ -62,15 +75,25 @@ export default function AlgoBuilderPage() {
       void Promise.all([
         window.api.strategies.list(),
         window.api.backtest.getLatestSweep(),
-        load()
+        load(),
+        useWorkspaceStore.getState().init()
       ]).then(([list, latestSweep]) => {
         const items = list as StrategyMeta[]
         setStrategies(items)
         useEngineStore.getState().setStrategyCatalog(items)
         if (latestSweep) setSweepResult(latestSweep)
+        const days = useWorkspaceStore.getState().workspace?.algoBuilder?.heatmapDays
+        if (days) setHeatmapDaysState(days)
+        setWorkspaceReady(true)
       })
     }
   }, [load])
+
+  useEffect(() => {
+    if (workspaceHeatmapDays != null && workspaceReady) {
+      setHeatmapDaysState(workspaceHeatmapDays)
+    }
+  }, [workspaceHeatmapDays, workspaceReady])
 
   const selected = strategies.find((s) => s.id === strategyId)
   const schema = schemaWithoutLeverage(selected?.params ?? [])
@@ -81,10 +104,35 @@ export default function AlgoBuilderPage() {
   }, [setParams, setEnsemble])
 
   useHeatmapLabSync(useCallback((nextParams, nextEnsemble, payload) => {
+    if (payload.strategyId) {
+      const strat = strategies.find((s) => s.id === payload.strategyId)
+      setStrategyId(payload.strategyId, strat?.defaultParams as StrategyParams | undefined)
+    }
     setParams(nextParams)
     setEnsemble(nextEnsemble)
     setLabApplied(payload)
-  }, [setParams, setEnsemble]))
+    recordSetupAsync({
+      strategyId: payload.strategyId ?? strategyId ?? "",
+      params: nextParams,
+      symbols,
+      interval,
+      ensemble: payload.strategyId === ENSEMBLE_STRATEGY_ID ? nextEnsemble : undefined,
+      source: "heatmap"
+    })
+  }, [setParams, setEnsemble, setStrategyId, strategies, strategyId, symbols, interval]))
+
+  const getCurrentSetup = useCallback((): AlgoSetupInput => ({
+    strategyId: strategyId ?? "",
+    params: { ...params },
+    symbols: [...symbols],
+    interval,
+    ensemble: isEnsemble ? ensemble : undefined,
+    source: "saved"
+  }), [strategyId, params, symbols, interval, isEnsemble, ensemble])
+
+  const handleLoadSetup = useCallback((setup: AlgoSetup) => {
+    loadSetup(setup)
+  }, [loadSetup])
 
   return (
     <div className="page-content">
@@ -94,6 +142,12 @@ export default function AlgoBuilderPage() {
         arm the live engine.
       </p>
 
+      <SetupLibraryPanel
+        strategies={strategies}
+        getCurrentSetup={getCurrentSetup}
+        onLoad={handleLoadSetup}
+      />
+
       {error && (
         <Alert severity="error" sx={{ mb: 2, maxWidth: 720 }}>
           {error}
@@ -102,7 +156,8 @@ export default function AlgoBuilderPage() {
 
       {armed && (
         <Alert severity="success" sx={{ mb: 2, maxWidth: 720 }}>
-          Engine running — {strategyId} on {runningSymbols.join(", ") || symbols.join(", ")}
+          Engine running — {strategyId} on {runningSymbols.join(", ") || symbols.join(", ")} @{" "}
+          {interval}
         </Alert>
       )}
 
@@ -131,11 +186,18 @@ export default function AlgoBuilderPage() {
 
         <FormSection title="Market">
           <FormRow>
-            <CompactField
+            <SymbolField
               className="field-grow"
-              label="Symbol"
               value={symbols[0] ?? ""}
-              onChange={(e) => setSymbol(e.target.value)}
+              onChange={setSymbol}
+            />
+            <CompactField
+              className="field-md"
+              select
+              label="Interval"
+              value={interval}
+              onChange={(e) => setInterval(e.target.value as import("binance").KlineInterval)}
+              options={["15m", "1h", "4h", "1d"].map((i) => ({ value: i, label: i }))}
             />
           </FormRow>
         </FormSection>
@@ -188,7 +250,7 @@ export default function AlgoBuilderPage() {
           <OpenHeatmapLabButton
             strategyId={strategyId ?? ENSEMBLE_STRATEGY_ID}
             symbol={symbols[0] ?? "BTCUSDT"}
-            interval={heatmapInterval}
+            interval={interval}
             days={heatmapDays}
             params={params}
             ensemble={ensemble}
@@ -197,14 +259,6 @@ export default function AlgoBuilderPage() {
         <FormSection title="Heatmap settings">
           <FormRow>
             <CompactField
-              className="field-md"
-              select
-              label="Interval"
-              value={heatmapInterval}
-              onChange={(e) => setHeatmapInterval(e.target.value)}
-              options={["15m", "1h", "4h", "1d"].map((i) => ({ value: i, label: i }))}
-            />
-            <CompactField
               className="field-sm"
               label="Days"
               type="number"
@@ -212,6 +266,9 @@ export default function AlgoBuilderPage() {
               onChange={(e) => setHeatmapDays(parseInt(e.target.value) || 90)}
             />
           </FormRow>
+          <p className="form-section-desc" style={{ marginTop: 8, marginBottom: 0 }}>
+            Uses the same symbol and interval as Market above.
+          </p>
         </FormSection>
 
         <div className="form-divider" />
@@ -221,7 +278,7 @@ export default function AlgoBuilderPage() {
           params={params}
           ensemble={ensemble}
           symbol={symbols[0] ?? "BTCUSDT"}
-          interval={heatmapInterval}
+          interval={interval}
           days={heatmapDays}
           strategies={strategies}
           history={history}

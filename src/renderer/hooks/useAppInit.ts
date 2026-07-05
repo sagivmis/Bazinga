@@ -6,6 +6,7 @@ import { useMarketStore } from "../stores/marketStore"
 import { useEngineStore } from "../stores/engineStore"
 import { useBacktestStore } from "../stores/backtestStore"
 import { useLeverageStore } from "../stores/leverageStore"
+import { useWorkspaceStore } from "../stores/workspaceStore"
 
 /** Wire IPC push events and polling on app mount */
 export function useAppInit() {
@@ -15,7 +16,9 @@ export function useAppInit() {
       useAccountStore.getState().init(),
       useMarketStore.getState().init()
     ]
-    void useEngineStore.getState().init()
+    void useWorkspaceStore.getState().init().then(() => {
+      void useEngineStore.getState().init()
+    })
     void useLeverageStore.getState().init()
 
     const engineUnsub = window.api?.on(IPC.EVENT_ENGINE, (_, data) => {

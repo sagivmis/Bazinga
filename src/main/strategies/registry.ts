@@ -3,6 +3,9 @@ import { volumeBreakoutStrategy, computeVolumeBreakoutSignal } from "./VolumeBre
 import { wyckoffSpringStrategy, computeWyckoffSpringSignal } from "./WyckoffSpring"
 import { wyckoffBreakoutStrategy, computeWyckoffBreakoutSignal } from "./WyckoffBreakout"
 import { highVolumeTrendStrategy, computeHighVolumeTrendSignal } from "./HighVolumeTrend"
+import { rsiScalperStrategy, computeRsiScalperSignal } from "./RsiScalper"
+import { bbBounceStrategy, computeBbBounceSignal } from "./BbBounce"
+import { stochMomentumStrategy, computeStochMomentumSignal } from "./StochMomentum"
 import { strategyEnsembleMeta } from "./StrategyEnsemble"
 import { ENSEMBLE_STRATEGY_ID } from "./ensembleSignal"
 import { withLeverageParams } from "./leverageSchema"
@@ -16,7 +19,10 @@ const baseStrategies: Strategy[] = [
   wyckoffSpringStrategy,
   wyckoffBreakoutStrategy,
   highVolumeTrendStrategy,
-  emaVwmaCrossStrategy
+  emaVwmaCrossStrategy,
+  rsiScalperStrategy,
+  bbBounceStrategy,
+  stochMomentumStrategy
 ].map(withLeverageParams)
 
 const strategies: Strategy[] = [withLeverageParams(strategyEnsembleMeta), ...baseStrategies]
@@ -26,7 +32,10 @@ const signalFns: Record<string, SignalFn> = {
   "volume-breakout": computeVolumeBreakoutSignal,
   "wyckoff-spring": computeWyckoffSpringSignal,
   "wyckoff-breakout": computeWyckoffBreakoutSignal,
-  "high-volume-trend": computeHighVolumeTrendSignal
+  "high-volume-trend": computeHighVolumeTrendSignal,
+  "rsi-scalper": computeRsiScalperSignal,
+  "bb-bounce": computeBbBounceSignal,
+  "stoch-momentum": computeStochMomentumSignal
 }
 
 export function listStrategies() {

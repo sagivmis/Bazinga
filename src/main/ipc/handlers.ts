@@ -1,9 +1,11 @@
 import { ipcMain, app } from "electron"
 import type { KlineInterval } from "binance"
 import { IPC } from "../../shared/ipc"
-import type { BacktestSweepRequest, EnsembleMultiSweepRequest, HeatmapApplyPayload, HeatmapLabBootstrap } from "../../shared/backtestSweepTypes"
+import type { BacktestSweepRequest, EnsembleMultiSweepRequest, HeatmapApplyPayload, HeatmapLabBootstrap, StrategyParamMultiSweepRequest } from "../../shared/backtestSweepTypes"
 import type {
   AppSettings,
+  AlgoSetupInput,
+  AppWorkspace,
   BacktestRequest,
   OrderIntent,
   StrategyParams
@@ -12,6 +14,8 @@ import { clearSecret, readSecret, storeSecret, hasStoredSecrets, isEncryptionAva
 import type { BinanceService } from "../services/BinanceService"
 import type { SettingsService } from "../services/SettingsService"
 import { ResultsStore } from "../services/ResultsStore"
+import { SetupStore } from "../services/SetupStore"
+import { WorkspaceStore } from "../services/WorkspaceStore"
 import { BacktestRunner } from "../engine/BacktestRunner"
 import { StrategyEngine } from "../engine/StrategyEngine"
 import { listStrategies } from "../strategies/registry"
@@ -35,6 +39,8 @@ export function registerIpcHandlers(
   binance: BinanceService
 ) {
   const results = new ResultsStore()
+  const setups = new SetupStore()
+  const workspace = new WorkspaceStore()
   const engine = new StrategyEngine(binance, settings, results)
   const backtest = new BacktestRunner(binance, results)
 
@@ -146,10 +152,17 @@ export function registerIpcHandlers(
         strategyId: string
         params: StrategyParams
         symbols: string[]
+        interval?: import("binance").KlineInterval
         ensemble?: import("../../shared/types").EnsembleMemberConfig[]
       }
     ) => {
-      const status = await engine.arm(args.strategyId, args.params, args.symbols, args.ensemble)
+      const status = await engine.arm(
+        args.strategyId,
+        args.params,
+        args.symbols,
+        args.ensemble,
+        args.interval
+      )
       binance.emit(IPC.EVENT_ENGINE, status)
       return status
     }
@@ -188,6 +201,17 @@ export function registerIpcHandlers(
     IPC.BACKTEST_GET_LATEST_ENSEMBLE_MULTI_SWEEP,
     () => backtest.getLatestEnsembleMultiSweep()
   )
+  ipcMain.handle(IPC.BACKTEST_STRATEGY_PARAM_MULTI_SWEEP, async (_e, req: StrategyParamMultiSweepRequest) => {
+    const result = await backtest.strategyParamMultiSweep(req, (done, total) => {
+      broadcast(IPC.EVENT_STRATEGY_PARAM_MULTI_SWEEP_PROGRESS, { done, total })
+    })
+    broadcast(IPC.EVENT_STRATEGY_PARAM_MULTI_SWEEP, result)
+    return result
+  })
+  ipcMain.handle(
+    IPC.BACKTEST_GET_LATEST_STRATEGY_PARAM_MULTI_SWEEP,
+    () => backtest.getLatestStrategyParamMultiSweep()
+  )
 
   ipcMain.handle(IPC.HEATMAP_SET_BOOTSTRAP, (_e, config: HeatmapLabBootstrap) => {
     setHeatmapBootstrap(config)
@@ -199,4 +223,22 @@ export function registerIpcHandlers(
   ipcMain.handle(IPC.HEATMAP_APPLY, (_e, payload: HeatmapApplyPayload) => {
     broadcast(IPC.EVENT_HEATMAP_APPLY, payload)
   })
+
+  ipcMain.handle(IPC.SETUPS_LIST, () => ({
+    recent: setups.listRecent(),
+    saved: setups.listSaved()
+  }))
+  ipcMain.handle(IPC.SETUPS_RECORD, (_e, input: AlgoSetupInput) => setups.record(input))
+  ipcMain.handle(
+    IPC.SETUPS_SAVE,
+    (_e, args: AlgoSetupInput & { name: string }) => setups.saveAs(args)
+  )
+  ipcMain.handle(IPC.SETUPS_TOUCH, (_e, id: string) => setups.touch(id))
+  ipcMain.handle(IPC.SETUPS_TOGGLE_FAVORITE, (_e, id: string) => setups.toggleFavorite(id))
+  ipcMain.handle(IPC.SETUPS_REMOVE, (_e, id: string) => setups.remove(id))
+
+  ipcMain.handle(IPC.WORKSPACE_GET, () => workspace.get())
+  ipcMain.handle(IPC.WORKSPACE_PATCH, (_e, partial: Partial<AppWorkspace>) =>
+    workspace.patch(partial)
+  )
 }

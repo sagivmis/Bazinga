@@ -63,7 +63,12 @@ export function formatSweepValue(key: string, value: number): number {
     key === "vwmaPeriod" ||
     key === "trendEmaPeriod" ||
     key === "pullbackLookback" ||
-    key === "volumePeriod"
+    key === "volumePeriod" ||
+    key === "oversold" ||
+    key === "overbought" ||
+    key === "bbPeriod" ||
+    key === "kPeriod" ||
+    key === "dPeriod"
   ) {
     return Math.round(value)
   }
