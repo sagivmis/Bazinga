@@ -1,0 +1,43 @@
+.positions-table {
+  padding: 12px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.positions-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.positions-table th {
+  text-align: left;
+  padding: 8px 10px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+
+.positions-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.pair {
+  font-weight: 700;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.empty-row {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 24px !important;
+}

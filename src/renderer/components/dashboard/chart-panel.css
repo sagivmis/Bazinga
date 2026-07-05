@@ -1,0 +1,61 @@
+.chart-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 380px;
+  flex: 1;
+}
+
+.chart-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.chart-symbol {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.symbol-name {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.symbol-price {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.timeframe-pills {
+  display: flex;
+  gap: 4px;
+}
+
+.tf-pill {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tf-pill:hover {
+  color: var(--text);
+}
+
+.tf-pill.active {
+  background: rgba(0, 229, 195, 0.1);
+  border-color: var(--accent-teal);
+  color: var(--accent-teal);
+}
+
+.chart-container {
+  flex: 1;
+  min-height: 320px;
+}

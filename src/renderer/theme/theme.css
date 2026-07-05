@@ -1,0 +1,83 @@
+:root {
+  --bg-base: #0a0e17;
+  --bg-panel: #111827;
+  --bg-elevated: #1a2235;
+  --border: #1e293b;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --accent-teal: #00e5c3;
+  --accent-pink: #ff4d8d;
+  --accent-purple: #a78bfa;
+  --positive: #00e5c3;
+  --negative: #ff4d8d;
+  --glow-teal: 0 0 20px rgba(0, 229, 195, 0.15);
+  --glow-pink: 0 0 20px rgba(255, 77, 141, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-base);
+  color: var(--text);
+  font-family: "Inter", system-ui, sans-serif;
+  overflow: hidden;
+}
+
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.panel-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+
+.positive {
+  color: var(--positive);
+}
+
+.negative {
+  color: var(--negative);
+}
+
+.btn-buy {
+  background: linear-gradient(135deg, #00e5c3, #00b89c);
+  color: #0a0e17;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-sell {
+  background: linear-gradient(135deg, #ff4d8d, #e03570);
+  color: white;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}

@@ -1,0 +1,45 @@
+.markets-table-wrap {
+  overflow: auto;
+  max-height: calc(100vh - 220px);
+}
+
+.markets-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.markets-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg-panel);
+}
+
+.market-row {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.market-row:hover {
+  background: var(--bg-elevated);
+}
+
+.markets-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.symbol-cell {
+  font-weight: 700;
+}
+
+.muted {
+  color: var(--text-muted);
+}

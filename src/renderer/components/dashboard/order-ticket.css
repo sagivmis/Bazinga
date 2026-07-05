@@ -1,0 +1,106 @@
+.order-ticket {
+  padding: 14px;
+}
+
+.side-toggle {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.side-btn {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.side-btn.buy.active {
+  background: rgba(0, 229, 195, 0.15);
+  border-color: var(--accent-teal);
+  color: var(--accent-teal);
+}
+
+.side-btn.sell.active {
+  background: rgba(255, 77, 141, 0.15);
+  border-color: var(--accent-pink);
+  color: var(--accent-pink);
+}
+
+.pct-buttons {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.pct-buttons button {
+  flex: 1;
+  padding: 4px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.order-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.order-leverage-hint {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin: 6px 0 0;
+  opacity: 0.85;
+}
+
+.leverage-presets {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.leverage-presets button {
+  padding: 3px 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.leverage-presets button:hover {
+  border-color: var(--accent-teal);
+  color: var(--accent-teal);
+}
+
+.order-ticket .form-row {
+  margin-bottom: 8px;
+}
+
+.place-order {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 10px;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+}
+
+.place-order:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -1,0 +1,61 @@
+.app-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-panel);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.footer-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer-divider {
+  opacity: 0.3;
+}
+
+.testnet-badge {
+  background: rgba(167, 139, 250, 0.2);
+  color: var(--accent-purple);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.footer-stats {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.footer-stats strong {
+  color: var(--text);
+}
+
+.margin-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.margin-bar {
+  width: 60px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.margin-bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent-teal);
+  border-radius: 2px;
+}

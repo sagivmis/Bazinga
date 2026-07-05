@@ -1,0 +1,118 @@
+/* Compact multi-column form layout */
+
+.form-panel {
+  padding: 16px 18px;
+}
+
+.form-section {
+  margin-bottom: 18px;
+}
+
+.form-section:last-child {
+  margin-bottom: 0;
+}
+
+.form-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+}
+
+.form-section-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin: -4px 0 12px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 10px 12px;
+  align-items: start;
+}
+
+@media (min-width: 520px) {
+  .form-grid {
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  }
+}
+
+.form-grid-wide {
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+}
+
+.form-grid .field-span-2 {
+  grid-column: span 2;
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  align-items: flex-start;
+}
+
+.form-row .field-grow {
+  flex: 1 1 120px;
+  min-width: 0;
+  max-width: 180px;
+}
+
+.form-row .field-sm {
+  flex: 0 1 88px;
+  min-width: 72px;
+  max-width: 100px;
+}
+
+.form-row .field-md {
+  flex: 0 1 100px;
+  min-width: 88px;
+  max-width: 120px;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.compact-field {
+  width: 100%;
+}
+
+.compact-field .MuiInputBase-root {
+  background: var(--bg-elevated);
+}
+
+.compact-field .MuiInputBase-input {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.compact-field .MuiInputLabel-root {
+  font-size: 0.72rem;
+}
+
+.form-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 14px 0;
+}
+
+.form-field-full {
+  width: 100%;
+  max-width: 100%;
+}
+
+.form-field-full.compact-field {
+  max-width: 100%;
+}

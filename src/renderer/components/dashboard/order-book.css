@@ -1,0 +1,54 @@
+.order-book-panel {
+  flex: 1;
+  min-height: 200px;
+  overflow: hidden;
+}
+
+.order-book {
+  padding: 8px;
+  font-size: 11px;
+  font-family: monospace;
+}
+
+.book-row {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 4px;
+}
+
+.book-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  opacity: 0.15;
+}
+
+.ask-bar {
+  background: var(--accent-pink);
+}
+
+.bid-bar {
+  background: var(--accent-teal);
+}
+
+.book-price {
+  z-index: 1;
+  font-weight: 600;
+}
+
+.book-qty {
+  z-index: 1;
+  color: var(--text-muted);
+}
+
+.book-mid {
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin: 4px 0;
+}
